@@ -1,4 +1,4 @@
-# 433 MHz → Home Assistant Bridge  
+extending their# 433 MHz → Home Assistant Bridge  
 Use your old 433 MHz remotes to control modern Wi-Fi & ZigBee smart plugs
 ## 🧠 Project Idea  
 This project was created during a household transition away from classic **433 MHz RF remote-controlled power plugs** 
@@ -17,7 +17,7 @@ Build a bridge that:
 2. **Decodes and filters** valid pulses  
 3. **Sends events** to Home Assistant  
 4. **Triggers automations** to control Wi-Fi or ZigBee smart plugs  
-5. Keeps the **original handheld remotes fully functional**
+5. Keeps the **original handheld remotes fully functional** and extending their use
 
 This project implements exactly that.
 ## 🏗️ Implementation Overview
