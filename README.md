@@ -11,5 +11,5 @@ ESP32 + CC1101 + ESPHome:
 - Send event to Home Assistant
 - HA automation performs the action (toggle smart plug, scene, etc.)
 ## Benefits
-- Equipment reuse
-- Flexible remote to action allocation
+- Flexible reuse of equipment
+- Any handheld button could trigger any HA action
