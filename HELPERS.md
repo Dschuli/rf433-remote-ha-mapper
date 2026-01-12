@@ -14,7 +14,7 @@ Create these helper entities in Home Assistant before using the RF433 Learning C
 
 **Configuration**:
 - **Name**: `RF433 Last Event Store`
-- **Icon**: `mdi:radio-handheld` (optional)
+- **Icon**: `mdi:remote` (optional)
 - **Entity ID**: `input_text.rf433_last_event_store`
 - **Mode**: Text
 - **Maximum length**: 255
@@ -53,7 +53,7 @@ input_text:
   rf433_last_event_store:
     name: RF433 Last Event Store
     max: 255
-    icon: mdi:radio-handheld
+    icon: mdi:remote
 
 input_boolean:
   rf433_block_events:

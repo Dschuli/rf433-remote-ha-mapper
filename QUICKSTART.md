@@ -139,7 +139,7 @@ Developer Tools → Events → Listen to Events:
 
 ## Get Help
 
-- 📖 Full documentation: [README.md](README.md)
-- 🔌 Hardware guide: [WIRING.md](WIRING.md)
-- 🛠️ Helper setup: [HELPERS.md](HELPERS.md)
-- 🐛 Issues: [GitHub Issues](https://github.com/Dschuli/433mhz-handheld-to-homeassistant/issues)
+- Full documentation: [README.md](README.md)
+- Hardware guide: [WIRING.md](WIRING.md)
+- Helper setup: [HELPERS.md](HELPERS.md)
+- Issues: [GitHub Issues](https://github.com/Dschuli/rf433-remote-ha-mapper/issues)

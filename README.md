@@ -1,10 +1,10 @@
-# 433MHz Handheld to Home Assistant
+# 433MHz Remote Control Mapper for Home Assistant
 
-A comprehensive solution for integrating 433MHz RF remote controls (handhelds) with Home Assistant. This project combines an ESPHome-based RF sniffer with a powerful learning interface in Home Assistant, allowing you to easily map RF signals to Home Assistant actions.
+A comprehensive solution for integrating 433MHz RF remote controls with Home Assistant. This project combines an ESPHome-based RF sniffer with a powerful learning interface in Home Assistant, allowing you to easily map RF signals to Home Assistant actions.
 
 ## Benefits
 - **Re-use existing 433 MHz remotes** (Intertechno, Elro, Brennenstuhl, A-Trust) to control modern Wi-Fi/ZigBee plugs via Home Assistant
-- **Oldschool** household members with reluctance to use home automation features, apps or voice control can keep using the 433MHz handhelds
+- **Oldschool** household members with reluctance to use home automation features, apps or voice control can keep using the 433MHz remotes
 - **Use existing 433 MHz remotes** as generic actuators for all potential HomeAssistant actions
 - **No cloud dependency** - works locally even without internet
 - **One button, multiple actions** - trigger scenes/automations with a single press
@@ -18,7 +18,7 @@ A comprehensive solution for integrating 433MHz RF remote controls (handhelds) w
 - **Backup & Undo**: Session and step-level backups with undo functionality
 - **Import/Export**: Save and share your RF mappings as JSON
 - **Debouncing**: Built-in protection against duplicate signals
-- **Status LED**: Visual WiFi connection and handheld action feedback
+- **Status LED**: Visual WiFi connection and remote action feedback
 - **Event Blocking**: Option to temporarily disable RF event processing during learning
 
 ## Requirements
@@ -145,7 +145,7 @@ If events appear, you're ready to start mapping!
    - Select the Home Assistant entity to control
    - Choose the service (turn_on, turn_off, toggle, etc.)
    - Add service data if needed (JSON format)
-   - Add metadata (handheld name, button label, etc.)
+   - Add metadata (remote name, button label, etc.)
 4. **Save**: Click Save to store the mapping
 5. **Test**: The RF button should now control your Home Assistant entity!
 
@@ -214,7 +214,7 @@ Edit `homeassistant/www/rf433/rf433-config.js` to customize:
 ## Project Structure
 
 ```
-433mhz-handheld-to-homeassistant/
+rf433-remote-ha-mapper/
 ├── esphome/
 │   ├── 433mhz-sniffer.yaml       # Main ESPHome configuration
 │   ├── hardware-config.yaml       # Hardware-specific settings

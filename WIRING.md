@@ -82,8 +82,9 @@ rf_receiver_pin: GPIO13     # Change to your receiver pin
 - Use quality 5V power supply (500mA minimum, 1A recommended for headroom)
 - USB power adapters work well for this low-power project
 - Consider adding decoupling capacitors:
-  - 100µF electrolytic near power input
-  - 0.1µF ceramic near each IC
+  - Test device works without capacitors
+  - 100µF electrolytic near power input (VCC - GND)
+  - 0.1µF ceramic near each IC (VCC - GND)
 - For long cable runs, use proper gauge wire
 
 ## RF Receiver Antenna

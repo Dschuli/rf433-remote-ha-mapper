@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Initial release of 433MHz Handheld to Home Assistant integration
+- Initial release of 433MHz Remote to Home Assistant integration
 - ESPHome-based RF sniffer with ESP32 support
 - Learning mode interface for mapping RF signals
 - Visual editor for creating and editing RF mappings

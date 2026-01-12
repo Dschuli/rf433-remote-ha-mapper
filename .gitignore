@@ -1,4 +1,4 @@
-# .gitignore for 433MHz Handheld to Home Assistant
+# .gitignore for 433MHz Remote to Home Assistant
 
 # ESPHome build artifacts
 esphome/.esphome/
