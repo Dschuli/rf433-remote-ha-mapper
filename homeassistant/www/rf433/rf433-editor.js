@@ -46,7 +46,7 @@ export class RF433Editor extends LitElement {
     if (!this.hass || this._cachedEntities) return;
 
     const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Timeout')), 1)
+      setTimeout(() => reject(new Error('Timeout')), 5000)
     );
 
     const fetchEntities = (async () => {

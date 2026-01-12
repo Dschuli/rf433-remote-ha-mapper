@@ -69,33 +69,18 @@ rf_receiver_pin: GPIO13     # Change to your receiver pin
 **Input only** (cannot be used for LED):
 - GPIO34, GPIO35, GPIO36, GPIO39
 
-## Breadboard Layout Example
-
-```
-                        ESP32-DevKit
-                    ┌─────────────────┐
-    CC1101 Module   │                 │      WS2812 LED
-    ┌──────┐        │  3.3V   GPIO13  │      ┌──────┐
-    │ VCC  ├────────┤  (red)  (ylw)   │      │ DIN  │
-    │ GDO2 ├────────┤  GND    GPIO12  ├──────┤(grn) │
-    │ GND  ├────────┤  (blk)  (grn)   │      │ VCC  │
-    └──────┘        │         5V      ├──────┤(red) │
-                    │         (red)   │      │ GND  │
-       ANT ≈17.3cm  │         GND     ├──────┤(blk) │
-                    │         (blk)   │      └──────┘
-                    └─────────────────┘
-```
-
 ## Power Considerations
 
 ### Development/Testing
-- USB power from computer is sufficient
+- USB power from computer is sufficient (500mA typical)
 - ESP32 draws ~80-160mA in normal operation
-- RF receiver draws ~2-4mA
+- CC1101 draws ~2-4mA
 - Single LED draws ~20mA
+- **Total: ~200-250mA maximum**
 
 ### Production Deployment
-- Use quality 5V power supply (1A minimum)
+- Use quality 5V power supply (500mA minimum, 1A recommended for headroom)
+- USB power adapters work well for this low-power project
 - Consider adding decoupling capacitors:
   - 100µF electrolytic near power input
   - 0.1µF ceramic near each IC

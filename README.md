@@ -27,7 +27,7 @@ A comprehensive solution for integrating 433MHz RF remote controls (handhelds) w
 - ESP32 development board (ESP32-DevKit or similar)
 - 433MHz RF receiver module (CC1101 sub-GHz RF transceiver - tested)
 - WS2812/WS2811 LED for status indication (optional but recommended)
-- Jumper wires and breadboard or custom PCB
+- Jumper wires and breakout board or custom PCB
 
 ### Software
 - Home Assistant 2024.1 or newer (tested with 2026.1)
@@ -235,6 +235,8 @@ Edit `homeassistant/www/rf433/rf433-config.js` to customize:
 │       └── mixins/
 │           ├── confirm.js                # Confirmation dialogs
 │           └── busy_overlay_mixin.js     # Busy state overlay
+├── pictures/
+│   └── ....
 └── README.md
 ```
 
