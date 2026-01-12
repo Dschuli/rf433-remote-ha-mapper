@@ -401,7 +401,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
       service: "",
       entity: "",
       service_data: {},
-      handheld: "",
+      remote: "",
       type: "",
       channel: "",
       button: ""
@@ -794,7 +794,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
                     <pre>${JSON.stringify(nonEditMatch.service_data ?? {}, null, 2)}</pre>
                   </li>
                   <li>Active: ${nonEditMatch.active ? "yes" : "no"}</li>
-                  <li>Handheld: ${nonEditMatch.handheld}</li>
+                  <li>Remote: ${nonEditMatch.remote}</li>
                   <li>Button: ${nonEditMatch.button}</li>
                   <li>Channel: ${nonEditMatch.channel}</li>
                   <li>Type: ${nonEditMatch.type}</li>

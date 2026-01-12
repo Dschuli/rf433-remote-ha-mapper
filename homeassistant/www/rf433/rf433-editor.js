@@ -412,17 +412,17 @@ export class RF433Editor extends LitElement {
         <div class="row row-4">
           <ha-selector
             .hass=${this.hass}
-            .label=${"Handheld"}
-            .value=${this._working?.handheld ?? ""}
+            .label=${"Remote"}
+            .value=${this._working?.remote ?? ""}
             .required=${false}
             .selector=${{
         select: {
-          options: this._getUniqueValues('handheld').map(i => i.value),
+          options: this._getUniqueValues('remote').map(i => i.value),
           custom_value: true
         }
       }}
             ?disabled=${this.disabled}
-            @value-changed=${e => this._change("handheld", e.detail.value)}>
+            @value-changed=${e => this._change("remote", e.detail.value)}>
           </ha-selector>
           <ha-selector
             .hass=${this.hass}

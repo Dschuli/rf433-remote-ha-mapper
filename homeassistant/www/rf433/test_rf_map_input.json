@@ -1,0 +1,14 @@
+[
+  {
+    "active": true,
+    "button": "1 On",
+    "channel": "D-I",
+    "code": "5242901",
+    "entity": "switch.device_1",
+    "remote": "1",
+    "proto": "1",
+    "service": "switch.turn_on",
+    "service_data": {},
+    "type": "ITS-150"
+  }
+]
