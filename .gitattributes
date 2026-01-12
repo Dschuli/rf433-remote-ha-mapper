@@ -4,12 +4,13 @@
 *.yaml linguist-language=YAML
 *.yml linguist-language=YAML
 
-# Mark ESPHome configurations
-esphome/*.yaml linguist-language=YAML
+# Mark shell scripts
+*.sh linguist-language=Shell
 
-# Documentation
-*.md linguist-documentation
-
-# If you want to exclude certain JS files from stats (uncomment if needed)
-# homeassistant/www/mixins/*.js linguist-vendored=false
-# homeassistant/www/utils/*.js linguist-vendored=false
+# Mark documentation files so they don't count in language stats
+*.md linguist-documentation=true
+CHANGELOG.md linguist-documentation=true
+README.md linguist-documentation=true
+QUICKSTART.md linguist-documentation=true
+HELPERS.md linguist-documentation=true
+WIRING.md linguist-documentation=true
