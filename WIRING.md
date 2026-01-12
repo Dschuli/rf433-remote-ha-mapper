@@ -3,37 +3,44 @@
 ## Components
 
 1. **ESP32 Development Board** (e.g., ESP32-DevKitC)
-2. **433MHz RF Receiver Module** (RXB6 or similar superheterodyne receiver recommended)
+2. **433MHz RF Receiver Module** (CC1101 sub-GHz RF transceiver recommended, tested and reliable)
 3. **WS2812/WS2811 LED** (optional, for status indication)
 4. **Jumper wires**
 5. **Breadboard** (for prototyping)
 
 ## Wiring Diagram
 
-### 433MHz RF Receiver (RXB6)
+### 433MHz RF Receiver (CC1101)
 
-```
-ESP32 Pin          →  RF Receiver Pin
-─────────────────────────────────────
-3.3V               →  VCC
-GND                →  GND
-GPIO13 (D13)       →  DATA
-```
+The CC1101 is a sub-GHz RF transceiver that communicates via SPI. Below is the complete wiring:
+
+| CC1101 Pin | Function | ESP32 Pin | Wire Color |
+|------------|----------|-----------|------------|
+| 1 | GND | GND | Black |
+| 2 | VCC | 3.3V | Red |
+| 3 | GDO0 | GPIO4 (D4) | Brown |
+| 4 | CSN | GPIO5 (D5) | White |
+| 5 | SCK | GPIO18 (D18) | Yellow |
+| 6 | MOSI | GPIO23 (D23) | Green |
+| 7 | MISO | GPIO19 (D19) | Blue |
+| 8 | GDO2 | GPIO2 (D2) | Gray |
 
 **Notes**:
-- Most 433MHz receivers work with 3.3V or 5V
-- Check your receiver's datasheet for voltage requirements
-- Use 3.3V for ESP32 compatibility
+- CC1101 requires 3.3V power (do NOT use 5V)
+- Uses ESP32 VSPI interface (pins 18, 19, 23, 5)
+- GDO2 (pin 8) is the primary data pin for receiving RF signals
+- GDO0 (pin 3) can be used for transmit or additional functionality
+- CC1101 has built-in antenna or SMA connector for external antenna
 - Keep antenna wire straight and approximately 17.3cm (quarter wavelength for 433MHz)
 
 ### Status LED (WS2812/WS2811)
 
 ```
-ESP32 Pin          →  LED Pin
-───────────────────────────────
-GPIO12 (D12)       →  DIN (Data In)
-5V                 →  VCC (or +5V)
-GND                →  GND
+ESP32 Pin          →  LED Pin            Wire Color (typical)
+──────────────────────────────────────────────────────────────
+GPIO12 (D12)       →  DIN (Data In)      Green/Yellow
+5V                 →  VCC (or +5V)       Red
+GND                →  GND                Black
 ```
 
 **Notes**:
@@ -67,14 +74,15 @@ rf_receiver_pin: GPIO13     # Change to your receiver pin
 ```
                         ESP32-DevKit
                     ┌─────────────────┐
-    RF Receiver     │                 │
-    ┌──────┐        │  3.3V   GPIO13  │
-    │ VCC  ├────────┤  GND    GPIO12  │─── LED Data
-    │ DATA ├────────┤         5V      │─── LED VCC
-    │ GND  ├────────┤                 │
-    └──────┘        │                 │
-                    │                 │
-       ANT ≈17.3cm  │                 │
+    CC1101 Module   │                 │      WS2812 LED
+    ┌──────┐        │  3.3V   GPIO13  │      ┌──────┐
+    │ VCC  ├────────┤  (red)  (ylw)   │      │ DIN  │
+    │ GDO2 ├────────┤  GND    GPIO12  ├──────┤(grn) │
+    │ GND  ├────────┤  (blk)  (grn)   │      │ VCC  │
+    └──────┘        │         5V      ├──────┤(red) │
+                    │         (red)   │      │ GND  │
+       ANT ≈17.3cm  │         GND     ├──────┤(blk) │
+                    │         (blk)   │      └──────┘
                     └─────────────────┘
 ```
 
@@ -96,7 +104,7 @@ rf_receiver_pin: GPIO13     # Change to your receiver pin
 ## RF Receiver Antenna
 
 For optimal reception:
-1. **Wire length**: ~17.3cm (quarter wavelength at 433.92MHz)
+1. **Wire length**: ~17.3cm (quarter wavelength at 433.92MHz), stub antenna as e.g. included in the CC1101 SMA Antenna RF Transceiver Modul AYWHP 433MHz tested and works well
 2. **Wire type**: Solid core wire (22-24 AWG)
 3. **Orientation**: Keep straight and vertical if possible
 4. **Placement**: Away from power supplies and WiFi routers
@@ -126,11 +134,11 @@ After wiring:
 ## Troubleshooting
 
 **No signals received**:
-- Check antenna length and straightness
-- Verify data pin connection
+- Check antenna length and straightness (or use CC1101 with built-in antenna)
+- Verify GDO2 (data) pin connection to GPIO13
 - Move closer to transmitter
-- Check RF receiver power (VCC should be 3.3V or 5V depending on module)
-- Try different receiver module (cheap modules vary in quality)
+- Check CC1101 power (VCC must be 3.3V, NOT 5V!)
+- Verify CC1101 is properly seated on breadboard/connectors
 
 **LED not working**:
 - Verify 5V power to LED

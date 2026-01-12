@@ -2,7 +2,15 @@
 
 A comprehensive solution for integrating 433MHz RF remote controls (handhelds) with Home Assistant. This project combines an ESPHome-based RF sniffer with a powerful learning interface in Home Assistant, allowing you to easily map RF signals to Home Assistant actions.
 
-## 🎯 Features
+## Benefits
+- **Re-use existing 433 MHz remotes** (Intertechno, Elro, Brennenstuhl, A-Trust) to control modern Wi-Fi/ZigBee plugs via Home Assistant
+- **Oldschool** household members with reluctance to use home automation features, apps or voice control can keep using the 433MHz handhelds
+- **Use existing 433 MHz remotes** as generic actuators for all potential HomeAssistant actions
+- **No cloud dependency** - works locally even without internet
+- **One button, multiple actions** - trigger scenes/automations with a single press
+- **Cost-effective** - repurpose old remotes instead of buying new smart ones
+
+## Features
 
 - **ESPHome RF Sniffer**: Reliable 433MHz signal reception using ESP32 hardware
 - **Learning Mode**: Interactive UI for mapping RF signals to Home Assistant entities
@@ -10,14 +18,14 @@ A comprehensive solution for integrating 433MHz RF remote controls (handhelds) w
 - **Backup & Undo**: Session and step-level backups with undo functionality
 - **Import/Export**: Save and share your RF mappings as JSON
 - **Debouncing**: Built-in protection against duplicate signals
-- **Status LED**: Visual WiFi connection feedback
-- **Event Blocking**: Temporarily disable RF event processing during learning
+- **Status LED**: Visual WiFi connection and hendheld action feedback
+- **Event Blocking**: Option to temporarily disable RF event processing during learning
 
-## 📋 Requirements
+## Requirements
 
 ### Hardware
 - ESP32 development board (ESP32-DevKit or similar)
-- 433MHz RF receiver module (RXB6 superheterodyne recommended for better range)
+- 433MHz RF receiver module (CC1101 sub-GHz RF transceiver - tested)
 - WS2812/WS2811 LED for status indication (optional but recommended)
 - Jumper wires and breadboard or custom PCB
 
@@ -27,9 +35,11 @@ A comprehensive solution for integrating 433MHz RF remote controls (handhelds) w
 - MQTT Broker (Mosquitto recommended)
 - Modern web browser (for the learning interface)
 
-## 🚀 Installation
+## Installation
 
 ### 1. ESPHome Setup
+
+> **Performance Note**: ESPHome compilation can be very slow on Raspberry Pi. For better performance, consider installing ESPHome on a Windows or Linux PC instead of using the Home Assistant add-on. See the [ESPHome Installation Guide](https://esphome.io/guides/installing_esphome.html) for platform-specific instructions.
 
 1. Copy the contents of the `esphome/` directory to your ESPHome configuration folder
 2. Edit `esphome/secrets.yaml`:
@@ -106,7 +116,26 @@ You'll need to add it as a resource first:
    - URL: `/local/rf433/rf433-learning-card.js`
    - Type: JavaScript Module
 
-## 📖 Usage
+## Usage
+
+### Test RF Reception
+
+Before mapping buttons, verify that RF signals are being received:
+
+1. **Check ESPHome Logs**:
+   ```bash
+   esphome logs 433mhz-sniffer.yaml
+   ```
+   Press an RF button - you should see: `[remote_receiver:xxx] Received RC Switch: protocol=X code='XXXXXX'`
+
+2. **Check Home Assistant Events**:
+   - Go to Developer Tools → Events
+   - Click "Listen to Events"
+   - Event type: `esphome.rf433`
+   - Press an RF button
+   - You should see event data with `protocol` and `code` fields
+
+If events appear, you're ready to start mapping!
 
 ### Learning Mode
 
@@ -144,6 +173,10 @@ Edit `esphome/hardware-config.yaml` to customize:
 - RF receiver parameters (idle time, filter, tolerance, buffer size)
 - Debounce timing
 - Fallback AP credentials
+- **RF logging mode** (`rf_dump_mode`):
+  - `rc_switch` - Show only RC Switch signals (recommended for initial setup/debugging)
+  - `all` - Show all protocols + raw data (very verbose, for troubleshooting)
+  - `none` - No RF logging (recommended for production/day-to-day use to reduce log spam)
 
 ### Frontend Configuration
 

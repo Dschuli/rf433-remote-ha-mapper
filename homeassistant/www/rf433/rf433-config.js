@@ -5,6 +5,20 @@
 // Entity domains supported for learning/edit mode
 export const ENTITY_DOMAIN_LIST = ["switch", "light", "cover", "script"];
 
+// Other common domains (not included by default; add avove if needed):
+// "climate",      // AC/heating controls - requires complex service data (temperature, mode, etc.)
+// "fan",          // Fans - typically needs speed/direction parameters
+// "lock",         // Smart locks - security-sensitive, use with caution
+// "media_player", // Media devices - requires service data (volume, source, etc.)
+// "scene",        // Scenes - similar to script but typically no parameters needed
+// "automation",   // Automations - can trigger/turn on/off automations
+// "input_boolean",// Toggle helpers - useful for custom logic
+// "input_select", // Select helpers - requires specific option values
+// "button",       // Button entities - only support "press" service
+// "vacuum",       // Robot vacuums - needs service data (zones, modes, etc.)
+// "camera",       // Cameras - limited RF use cases
+// "alarm_control_panel", // Alarm systems - security-sensitive
+
 // MQTT Sensors and Topics
 export const RUNTIME_MAPPING_SENSOR = "sensor.rf433_runtime_map";
 export const RUNTIME_MAPPING_TOPIC = "rf433/map";

@@ -6,7 +6,7 @@
 #
 # Hardware requirements:
 # - ESP32 development board
-# - 433MHz receiver module (e.g., RXB6, superheterodyne recommended)
+# - 433MHz receiver module (CC1101 sub-GHz RF transceiver recommended, tested)
 # - WS2812/WS2811 LED for status indication (optional)
 #
 # See hardware-config.yaml for pin assignments and hardware settings
@@ -108,7 +108,7 @@ remote_receiver:
   pin:
     number: ${rf_receiver_pin}
     inverted: false
-  dump: rc_switch # Use RC Switch protocol decoder
+  dump: ${rf_dump_mode} # Logging: rc_switch (debug), all (verbose), none (production)
   idle: ${rf_idle}
   filter: ${rf_filter}
   tolerance: ${rf_tolerance}
