@@ -732,12 +732,14 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
           <div class="flex_align" style="background: var(--secondary-background-color); padding: 8px; border-radius: var(--rf-border-radius);">
             <ha-button
               @click=${this._onExportMap}
-              title="Export current RF mapping to JSON file">
+              title="Export current RF mapping to JSON file"
+              ?disabled=${this._learningMode || isEditing}>
               Export Map
             </ha-button>
             <ha-button
               @click=${this._onImportMap}
-              title="Import RF mapping from JSON file">
+              title="Import RF mapping from JSON file"
+              ?disabled=${this._learningMode || isEditing}>
               Import Map
             </ha-button>
           </div>
