@@ -211,7 +211,7 @@ Edit `homeassistant/www/rf433/rf433-config.js` to customize:
 3. Check event blocking is disabled
 4. Verify mapped entities still exist and are available
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 433mhz-handheld-to-homeassistant/
@@ -223,8 +223,6 @@ Edit `homeassistant/www/rf433/rf433-config.js` to customize:
 │   ├── automations.yaml           # RF event processing automation
 │   ├── mqtt_sensors.yaml          # MQTT sensor definitions
 │   ├── scripts.yaml               # Helper scripts
-│   ├── scripts/
-│   │   └── write_json_file.sh    # JSON file writer utility
 │   └── www/
 │       ├── rf433/
 │       │   ├── rf433-learning-card.js    # Main card component
@@ -240,21 +238,23 @@ Edit `homeassistant/www/rf433/rf433-config.js` to customize:
 └── README.md
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
 
-## 📝 License
+## License
 
 This project is open source and available under the MIT License.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - ESPHome community for the excellent ESP32 platform
 - Home Assistant community for inspiration and support
 - All contributors and users of this project
 
-## 📧 Support
+## Support
+
+**Note**: This is a personal project maintained on a best-effort basis in my spare time. Support is limited but I'll do my best to help!
 
 If you encounter issues or have questions:
 1. Check the Troubleshooting section above
