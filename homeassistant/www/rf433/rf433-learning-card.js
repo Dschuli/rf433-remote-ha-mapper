@@ -68,11 +68,17 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
 
     // Suppress translation loading errors from HA's internal translation system
     // These occur because HA tries to load translations for custom cards but they don't exist
+    // Also suppress "Connection lost" errors from ha-selector and other HA components
     this._unhandledRejectionHandler = (event) => {
       if (event.reason?.error?.code === 'not_found' &&
         event.reason?.type === 'result' &&
         !event.reason?.success) {
         // Silently ignore translation loading failures
+        event.preventDefault();
+      } else if (event.reason?.error?.code === 3 &&
+        event.reason?.error?.message === 'Connection lost') {
+        // Ignore WebSocket connection lost errors to prevent page crashes
+        logger.warn('WebSocket connection lost. Ignoring to prevent page crash.');
         event.preventDefault();
       }
     };
@@ -228,11 +234,16 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     // snapshot BEFORE publish
     const beforeTs = new Date(this.hass.states[sensor]?.last_updated ?? 0).getTime();
     // MQTT publish
-    await this.hass.callService("mqtt", "publish", {
-      topic,
-      payload: JSON.stringify(payload),
-      retain: true
-    });
+    try {
+      await this.hass.callService("mqtt", "publish", {
+        topic,
+        payload: JSON.stringify(payload),
+        retain: true
+      });
+    } catch (err) {
+      logger.error("Failed to publish MQTT message:", err);
+      throw new Error(`Connection lost while publishing to ${topic}. Please check your Home Assistant connection.`);
+    }
     // wait for HA to reflect the change
     const ok = await this._waitForSensorUpdate(sensor, beforeTs);
     if (!ok) {
@@ -407,23 +418,28 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
   /* =========================================================
    * Event Handlers (User Actions)
    * ========================================================= */
-  _blockEvents() {
+  async _blockEvents() {
     if (!this.hass || !this._blockSeconds || this._blockSeconds <= 0) return;
     const blocked = this.hass.states[CONFIG.BLOCKING_HELPER]?.state === "on";
-    if (blocked) {
-      logger.info("RF433LearningCard: Allowing RF events");
-      this.hass.callService("script", "temporary_toggle", {
-        toggle: CONFIG.BLOCKING_HELPER,
-        status: "off",
-        seconds: 0
-      });
-    } else {
-      logger.info(`RF433LearningCard: Blocking RF events for ${this._blockSeconds} seconds`);
-      this.hass.callService("script", "temporary_toggle", {
-        toggle: CONFIG.BLOCKING_HELPER,
-        seconds: this._blockSeconds,
-        status: "on"
-      });
+    try {
+      if (blocked) {
+        logger.info("RF433LearningCard: Allowing RF events");
+        await this.hass.callService("script", "temporary_toggle", {
+          toggle: CONFIG.BLOCKING_HELPER,
+          status: "off",
+          seconds: 0
+        });
+      } else {
+        logger.info(`RF433LearningCard: Blocking RF events for ${this._blockSeconds} seconds`);
+        await this.hass.callService("script", "temporary_toggle", {
+          toggle: CONFIG.BLOCKING_HELPER,
+          seconds: this._blockSeconds,
+          status: "on"
+        });
+      }
+    } catch (err) {
+      logger.error("Failed to toggle event blocking:", err);
+      // Don't throw - this is a non-critical operation
     }
   }
 

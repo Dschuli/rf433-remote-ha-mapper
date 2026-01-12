@@ -13,6 +13,8 @@ export class RF433Editor extends LitElement {
     collection: { type: Array },
     _baseline: { state: true },
     _working: { state: true },
+    _cachedEntities: { state: true },
+    _entityCacheError: { state: true },
     disabled: { type: Boolean },
     existing: { type: Boolean },
   };
@@ -23,6 +25,76 @@ export class RF433Editor extends LitElement {
     this._working = null;
     this.existing = false;
     this._entityDomainList = ENTITY_DOMAIN_LIST;
+    this._cachedEntities = null;
+    this._entityCacheError = null;
+
+    // Add global unhandled rejection handler for WebSocket errors
+    this._boundRejectionHandler = this._handleUnhandledRejection.bind(this);
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener('unhandledrejection', this._boundRejectionHandler);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener('unhandledrejection', this._boundRejectionHandler);
+  }
+
+  async _fetchAndCacheEntities() {
+    if (!this.hass || this._cachedEntities) return;
+
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout')), 1)
+    );
+
+    const fetchEntities = (async () => {
+      // Filter entities by allowed domains
+      const entities = Object.keys(this.hass.states)
+        .filter(entity_id => {
+          const domain = entity_id.split('.')[0];
+          return this._entityDomainList.includes(domain);
+        });
+      return entities;
+    })();
+
+    try {
+      const entities = await Promise.race([fetchEntities, timeout]);
+      this._cachedEntities = entities;
+      this._entityCacheError = null;
+      logger.info(`RF433Editor: Cached ${entities.length} entities from ${this._entityDomainList.length} domains`);
+      this.requestUpdate(); // Force re-render with cached entities
+    } catch (err) {
+      if (err.message === 'Timeout') {
+        logger.error('Entity list fetch timed out after 5 seconds');
+        this._entityCacheError = 'Fetching of entity list from HomeAssistant failed - restart editor to retry';
+      } else {
+        logger.error('Failed to cache entities:', err);
+        this._entityCacheError = 'Failed to load entities - restart editor to retry';
+      }
+      // Fallback to domain-based filtering
+      this._cachedEntities = null;
+      this.requestUpdate();
+    }
+  }
+
+  _handleUnhandledRejection(event) {
+    // Handle "Connection lost" errors from ha-selector
+    if (event.reason?.error?.code === 3 && event.reason?.error?.message === 'Connection lost') {
+      logger.error('WebSocket connection lost. Ignoring to prevent page crash.');
+      event.preventDefault(); // Prevent the default unhandled rejection behavior
+      return;
+    }
+
+    // Handle translation loading errors from HA's internal translation system
+    if (event.reason?.type === 'result' &&
+      event.reason?.success === false &&
+      event.reason?.error) {
+      // Silently ignore translation loading failures
+      event.preventDefault();
+      return;
+    }
   }
 
   static styles = [
@@ -50,6 +122,11 @@ export class RF433Editor extends LitElement {
         this._baseline = structuredClone(this.draft);
         this._working = structuredClone(this.draft);
       }
+    }
+
+    // Fetch entities when hass becomes available
+    if (changedProps.has("hass") && this.hass && !this._cachedEntities) {
+      this._fetchAndCacheEntities();
     }
   }
 
@@ -223,11 +300,20 @@ export class RF433Editor extends LitElement {
     }
 
     return html`
+        ${this._entityCacheError ? html`
+          <div class="row">
+            <ha-alert alert-type="warning">
+              ${this._entityCacheError}
+            </ha-alert>
+          </div>
+        ` : ''}
         <div class="row">
           <div class="row-4">
             <ha-selector
               .hass=${this.hass}
-              .selector=${{ entity: { domain: this._entityDomainList } }}
+              .selector=${this._cachedEntities
+        ? { entity: { include_entities: this._cachedEntities } }
+        : { entity: { domain: this._entityDomainList } }}
               .value=${this._working?.entity ?? ""}
               ?disabled=${this.disabled}
               @value-changed=${e => this._change("entity", e.detail.value)}

@@ -18,7 +18,7 @@ A comprehensive solution for integrating 433MHz RF remote controls (handhelds) w
 - **Backup & Undo**: Session and step-level backups with undo functionality
 - **Import/Export**: Save and share your RF mappings as JSON
 - **Debouncing**: Built-in protection against duplicate signals
-- **Status LED**: Visual WiFi connection and hendheld action feedback
+- **Status LED**: Visual WiFi connection and handheld action feedback
 - **Event Blocking**: Option to temporarily disable RF event processing during learning
 
 ## Requirements
