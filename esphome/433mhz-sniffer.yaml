@@ -1,0 +1,149 @@
+# ===============================================================
+# 433MHz RF Sniffer for Home Assistant Integration
+# ===============================================================
+# This ESPHome configuration receives 433MHz RF signals and forwards
+# them to Home Assistant as events for processing and learning.
+#
+# Hardware requirements:
+# - ESP32 development board
+# - 433MHz receiver module (e.g., RXB6, superheterodyne recommended)
+# - WS2812/WS2811 LED for status indication (optional)
+#
+# See hardware-config.yaml for pin assignments and hardware settings
+# See secrets.yaml for WiFi credentials and API keys
+# ===============================================================
+
+substitutions:
+  device_name: 433mhz-sniffer-esp32
+  friendly_name: 433MHz Sniffer ESP32
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  build_path: ./.build
+  platformio_options:
+    upload_speed: 1500000
+
+# Include hardware configuration
+<<: !include hardware-config.yaml
+
+# ESP32 Configuration
+esp32:
+  board: ${esp32_board}
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Over-The-Air updates
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# WiFi Configuration
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Fallback hotspot in case WiFi connection fails
+  ap:
+    ssid: ${fallback_ap_ssid}
+    password: ${fallback_ap_password}
+
+captive_portal:
+
+# ===============================================================
+# Status LED - Visual feedback for WiFi connection status
+# ===============================================================
+light:
+  - platform: fastled_clockless
+    id: status_led
+    pin: ${status_led_pin}
+    num_leds: ${led_num_leds}
+    chipset: ${led_chipset}
+    rgb_order: ${led_rgb_order}
+    name: "433 Status LED"
+
+# Update LED color based on WiFi status every 5 seconds
+interval:
+  - interval: 5s
+    then:
+      - if:
+          condition: wifi.connected
+          then:
+            # WiFi connected → GREEN
+            - light.turn_on:
+                id: status_led
+                brightness: ${led_brightness}
+                red: 0%
+                green: 100%
+                blue: 0%
+          else:
+            # WiFi disconnected → RED
+            - light.turn_on:
+                id: status_led
+                brightness: ${led_brightness}
+                red: 100%
+                green: 0%
+                blue: 0%
+
+# ===============================================================
+# 433 MHz RF Receiver
+# ===============================================================
+# Global variables to store the last received signal
+globals:
+  - id: last_proto
+    type: int
+  - id: last_code
+    type: uint64_t
+
+# RF receiver configuration using RMT (ESP32 hardware peripheral)
+remote_receiver:
+  pin:
+    number: ${rf_receiver_pin}
+    inverted: false
+  dump: rc_switch # Use RC Switch protocol decoder
+  idle: ${rf_idle}
+  filter: ${rf_filter}
+  tolerance: ${rf_tolerance}
+  buffer_size: ${rf_buffer_size}
+
+  # Handle received RF signals
+  on_rc_switch:
+    # Debounce and filter duplicate signals
+    - lambda: |-
+        static uint32_t last_time = 0;
+        static uint8_t  last_proto_local = 0;
+        static uint64_t last_code_local = 0;
+
+        uint32_t now = millis();
+
+        // ${rf_debounce_ms}ms debounce + duplicate filter
+        if (now - last_time < ${rf_debounce_ms} &&
+            x.code == last_code_local &&
+            x.protocol == last_proto_local) {
+          return;   // Ignore duplicate signal
+        }
+
+        // Update tracking variables
+        last_time = now;
+        last_code_local = x.code;
+        last_proto_local = x.protocol;
+
+        // Store in global variables for event
+        id(last_proto) = x.protocol;
+        id(last_code) = x.code;
+        return;
+
+    # Send event to Home Assistant
+    - homeassistant.event:
+        event: "esphome.rf433"
+        data:
+          protocol: !lambda "return id(last_proto);"
+          code: !lambda "return to_string(id(last_code));"

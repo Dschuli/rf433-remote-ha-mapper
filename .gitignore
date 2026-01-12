@@ -1,0 +1,49 @@
+# .gitignore for 433MHz Handheld to Home Assistant
+
+# ESPHome build artifacts
+esphome/.esphome/
+esphome/.build/
+esphome/platformio.ini
+
+# Secrets - DO NOT COMMIT!
+esphome/secrets.yaml
+
+# Home Assistant specific
+homeassistant/.storage/
+homeassistant/home-assistant.log*
+homeassistant/*.db
+homeassistant/*.db-shm
+homeassistant/*.db-wal
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Node modules (if using any build tools)
+node_modules/
+package-lock.json
+
+# Temporary files
+*.tmp
+.temp/
+temp/

@@ -1,0 +1,45 @@
+# ===============================================================
+# RF433 Scripts for Home Assistant
+# ===============================================================
+# Add these scripts to your configuration.yaml scripts section
+# or include them as: script: !include scripts.yaml
+# ===============================================================
+
+# Temporary toggle helper - used for blocking RF events temporarily
+temporary_toggle:
+  alias: Temporary Toggle
+  description: Toggle an entity temporarily, then restore original state
+  fields:
+    toggle:
+      description: Entity to toggle
+      example: input_boolean.rf433_block_events
+    status:
+      description: Status to set ('on' or 'off')
+      example: "on"
+    seconds:
+      description: Duration in seconds (0 = no auto-restore)
+      example: 30
+  sequence:
+    - action: homeassistant.turn_{{ status }}
+      target:
+        entity_id: "{{ toggle }}"
+    - condition: template
+      value_template: "{{ seconds | int > 0 }}"
+    - delay:
+        seconds: "{{ seconds | int }}"
+    - action: homeassistant.turn_{{ 'off' if status == 'on' else 'on' }}
+      target:
+        entity_id: "{{ toggle }}"
+
+# Update entity helper - used for refreshing entity states
+update_entity:
+  alias: Update Entity
+  description: Force update of an entity state
+  fields:
+    entity_id:
+      description: Entity to update
+      example: sensor.rf433_runtime_map
+  sequence:
+    - action: homeassistant.update_entity
+      target:
+        entity_id: "{{ entity_id }}"

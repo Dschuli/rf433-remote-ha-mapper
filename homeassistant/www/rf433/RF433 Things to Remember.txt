@@ -1,0 +1,24 @@
+Things to do:
+	- Things to add in configuration.yaml
+			- command_line:
+				- sensor:
+						name: RF 433 Runtime Map
+						unique_id: rf_433_runtime_map
+						command: "cat /config/www/rf433/rf_map_sensor.json"
+						json_attributes:
+							- map
+						value_template: "{{ value_json.status }}"
+			-	shell_command:
+					# File copy commands - used with RF433 learning mode: "-f" overwrite "-n" no overwrite"
+					file_copy: cp {{ mode }} "{{ src }}" "{{ dest }}"
+					write_json_file: >
+						/config/scripts/write_json_file.sh
+						{{ target }}
+						'{{ content }}'
+
+	- Generic Helpers needed by rf433
+		-/config/scripts/write_json_file.sh
+				- Make executable - in HA terminal: chmod +x /config/scripts/write_json_file.sh
+		- script script.temporary_toggle
+		- script script.update_entity
+

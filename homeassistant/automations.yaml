@@ -1,0 +1,81 @@
+# ===============================================================
+# RF433 Automations for Home Assistant
+# ===============================================================
+# Add this content to your configuration.yaml automations section
+# or include it as: automation: !include_dir_merge_list automations/
+#
+# Required helper entities (create in Settings > Devices & Services > Helpers):
+# - input_text.rf433_last_event_store (Text input helper)
+# - input_boolean.rf433_block_events (Toggle helper)
+#
+# Required scripts:
+# - script.temporary_toggle (see scripts.yaml)
+# ===============================================================
+
+- id: rf433_event_handling
+  alias: RF433MHz event handling
+  description: Processes 433MHz RF events from ESPHome sniffer and executes mapped actions
+  triggers:
+    - event_type: esphome.rf433
+      trigger: event
+  variables:
+    proto: "{{ trigger.event.data.protocol | int }}"
+    code: "{{ trigger.event.data.code | int }}"
+    rf_map: "{{ state_attr('sensor.rf433_runtime_map', 'map') }}"
+  actions:
+    - choose:
+        # Error case: RF map sensor missing or empty
+        - conditions:
+            - condition: template
+              value_template: "{{ rf_map is none or rf_map | count == 0 }}"
+          sequence:
+            - data:
+                level: error
+                logger: rf433
+                message: "RF map sensor missing or empty! sensor=sensor.rf433_runtime_map"
+              action: system_log.write
+
+        # Normal case: RF map exists and has entries
+        - conditions:
+            - condition: template
+              value_template: "{{ rf_map | count > 0 }}"
+          sequence:
+            # Find matching entry in RF map
+            - variables:
+                entry: >
+                  {% set match = rf_map
+                     | selectattr('proto', 'equalto', proto | string)
+                     | selectattr('code', 'equalto', code | string)
+                     | list %}
+                  {{ match[0] if match | length > 0 else none }}
+
+            # Store last event for learning mode
+            - target:
+                entity_id: input_text.rf433_last_event_store
+              data:
+                value: >
+                  {{ {
+                    "proto": trigger.event.data.protocol | string,
+                    "code":  trigger.event.data.code  | string,
+                    "ts":    now().isoformat()
+                  } | tojson }}
+              action: input_text.set_value
+
+            # Execute action if not blocked and entry is active
+            - choose:
+                - conditions:
+                    - condition: state
+                      entity_id: input_boolean.rf433_block_events
+                      state: "on"
+                  sequence: [] # Events are blocked, do nothing
+
+                - conditions:
+                    - condition: template
+                      value_template: "{{ entry is not none and entry.active is true }}"
+                  sequence:
+                    - target:
+                        entity_id: "{{ entry.entity }}"
+                      data: "{{ entry.service_data | default({}) }}"
+                      action: "{{ entry.service }}"
+      default: []
+  mode: restart

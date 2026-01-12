@@ -1,0 +1,29 @@
+# ===============================================================
+# RF433 MQTT Sensors for Home Assistant
+# ===============================================================
+# Add this content to your configuration.yaml mqtt section:
+#
+# mqtt:
+#   sensor: !include mqtt_sensors.yaml
+#
+# Or merge with your existing mqtt sensors configuration
+# ===============================================================
+
+sensor:
+  - name: "RF433 Runtime Map"
+    unique_id: "rf433_runtime_map"
+    state_topic: "rf433/map"
+    json_attributes_topic: "rf433/map"
+    value_template: "{{ value_json.state }}"
+
+  - name: "RF433 Session Backup"
+    unique_id: "rf433_session_backup"
+    state_topic: "rf433/session_backup"
+    json_attributes_topic: "rf433/session_backup"
+    value_template: "{{ value_json.state }}"
+
+  - name: "RF433 Step Backup"
+    unique_id: "rf433_step_backup"
+    state_topic: "rf433/step_backup"
+    json_attributes_topic: "rf433/step_backup"
+    value_template: "{{ value_json.state }}"
