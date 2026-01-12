@@ -1,0 +1,15 @@
+# Linguist language overrides for proper GitHub language statistics
+
+# Mark YAML files explicitly
+*.yaml linguist-language=YAML
+*.yml linguist-language=YAML
+
+# Mark ESPHome configurations
+esphome/*.yaml linguist-language=YAML
+
+# Documentation
+*.md linguist-documentation
+
+# If you want to exclude certain JS files from stats (uncomment if needed)
+# homeassistant/www/mixins/*.js linguist-vendored=false
+# homeassistant/www/utils/*.js linguist-vendored=false

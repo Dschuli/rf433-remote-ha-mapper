@@ -30,8 +30,8 @@ A comprehensive solution for integrating 433MHz RF remote controls (handhelds) w
 - Jumper wires and breadboard or custom PCB
 
 ### Software
-- Home Assistant (2023.1 or newer)
-- ESPHome Add-on
+- Home Assistant 2024.1 or newer (tested with 2026.1)
+- ESPHome 2025.12 or newer (required for CC1101 support)
 - MQTT Broker (Mosquitto recommended)
 - Modern web browser (for the learning interface)
 
