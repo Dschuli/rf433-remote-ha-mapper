@@ -2,6 +2,9 @@
 
 Create these helper entities in Home Assistant before using the RF433 Learning Card.
 
+> For complete setup instructions, see [QUICKSTART.md](QUICKSTART.md) or [README.md](README.md).  
+> For detailed editor usage, see [RF433 mapping editor reference.md](RF433%20mapping%20editor%20reference.md).
+
 ## How to Create Helpers
 
 1. Navigate to **Settings** → **Devices & Services** → **Helpers**

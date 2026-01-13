@@ -2,8 +2,11 @@
  * RF433 Learning Card Configuration
  * ========================================================= */
 
+// IMPORTANT: After making changes to this file, clear your browser cache and 
+// Home Assistant companion app cache (if used) to ensure the updated code is loaded.
+
 // Entity domains supported for learning/edit mode
-export const ENTITY_DOMAIN_LIST = ["switch", "light", "cover", "script"];
+export const ENTITY_DOMAIN_LIST = ["switch", "light", "cover", "script", "automation"];
 
 // Other common domains (not included by default; add avove if needed):
 // "climate",      // AC/heating controls - requires complex service data (temperature, mode, etc.)
@@ -11,7 +14,6 @@ export const ENTITY_DOMAIN_LIST = ["switch", "light", "cover", "script"];
 // "lock",         // Smart locks - security-sensitive, use with caution
 // "media_player", // Media devices - requires service data (volume, source, etc.)
 // "scene",        // Scenes - similar to script but typically no parameters needed
-// "automation",   // Automations - can trigger/turn on/off automations
 // "input_boolean",// Toggle helpers - useful for custom logic
 // "input_select", // Select helpers - requires specific option values
 // "button",       // Button entities - only support "press" service

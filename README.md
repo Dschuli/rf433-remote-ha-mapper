@@ -2,6 +2,14 @@
 
 A comprehensive solution for integrating 433MHz RF remote controls with Home Assistant. This project combines an ESPHome-based RF sniffer with a powerful learning interface in Home Assistant, allowing you to easily map RF signals to Home Assistant actions.
 
+## Documentation
+
+- **[QUICKSTART.md](QUICKSTART.md)** - Get started in 5 minutes
+- **[README.md](README.md)** - This file: installation and overview
+- **[RF433 mapping editor reference.md](RF433%20mapping%20editor%20reference.md)** - Detailed editor features and usage
+- **[HELPERS.md](HELPERS.md)** - Helper entity setup
+- **[WIRING.md](WIRING.md)** - Hardware wiring guide
+
 ## Benefits
 - **Re-use existing 433 MHz remotes** (Intertechno, Elro, Brennenstuhl, A-Trust) to control modern Wi-Fi/ZigBee plugs via Home Assistant
 - **Oldschool** household members with reluctance to use home automation features, apps or voice control can keep using the 433MHz remotes
@@ -89,18 +97,10 @@ cp -r homeassistant/www/* /config/www/
 
 ### 3. Helper Entities
 
-Create the following helper entities in Home Assistant (Settings → Devices & Services → Helpers):
+Create two helper entities in Home Assistant. See [HELPERS.md](HELPERS.md) for detailed instructions:
 
-1. **Text Input Helper**:
-   - Name: `RF433 Last Event Store`
-   - Entity ID: `input_text.rf433_last_event_store`
-   - Max length: 255
-   - Mode: Text
-
-2. **Toggle Helper**:
-   - Name: `RF433 Block Events`
-   - Entity ID: `input_boolean.rf433_block_events`
-   - Initial state: Off
+- **Text Input**: `input_text.rf433_last_event_store` (stores RF event data)
+- **Toggle**: `input_boolean.rf433_block_events` (controls event blocking)
 
 ### 4. Dashboard Card
 
@@ -117,6 +117,10 @@ You'll need to add it as a resource first:
    - Type: JavaScript Module
 
 ## Usage
+
+### Quick Start
+
+See [QUICKSTART.md](QUICKSTART.md) for a streamlined getting started guide.
 
 ### Test RF Reception
 
@@ -137,31 +141,15 @@ Before mapping buttons, verify that RF signals are being received:
 
 If events appear, you're ready to start mapping!
 
-### Learning Mode
+### Learning and Mapping RF Codes
 
-1. **Enable Learning Mode**: Toggle the learning switch in the RF433 card
-2. **Press RF Button**: Press any button on your 433MHz remote
-3. **Configure Mapping**: The editor will open automatically:
-   - Select the Home Assistant entity to control
-   - Choose the service (turn_on, turn_off, toggle, etc.)
-   - Add service data if needed (JSON format)
-   - Add metadata (remote name, button label, etc.)
-4. **Save**: Click Save to store the mapping
-5. **Test**: The RF button should now control your Home Assistant entity!
+For detailed instructions on using the learning interface, editor features, backup/restore, and advanced configuration options, see [RF433 mapping editor reference.md](RF433%20mapping%20editor%20reference.md).
 
-### Import/Export
-
-- **Export**: Download your current RF mappings as JSON for backup or sharing
-- **Import**: Upload a previously exported JSON file to restore mappings
-
-### Undo Functionality
-
-- **During Learning**: Undo reverts to the state before the last save
-- **After Learning**: Undo restores the state before the learning session started
-
-### Event Blocking
-
-Use the Block/Unblock button to temporarily prevent RF events from triggering actions (useful during learning or testing).
+**Basic workflow**:
+1. Enable Learning Mode in the RF433 card
+2. Press an RF remote button
+3. Configure the mapping in the editor (entity, service, optional parameters)
+4. Save and test
 
 ## 🔧 Configuration
 

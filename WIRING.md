@@ -12,26 +12,43 @@
 
 ### 433MHz RF Receiver (CC1101)
 
-The CC1101 is a sub-GHz RF transceiver that communicates via SPI. Below is the complete wiring:
+The CC1101 is a sub-GHz RF transceiver that communicates via SPI. It supports both receiving (OOK/ASK modulation) and transmitting RF signals at 433MHz.
 
-| CC1101 Pin | Function | ESP32 Pin | Wire Color |
-|------------|----------|-----------|------------|
-| 1 | GND | GND | Black |
-| 2 | VCC | 3.3V | Red |
-| 3 | GDO0 | GPIO4 (D4) | Brown |
-| 4 | CSN | GPIO5 (D5) | White |
-| 5 | SCK | GPIO18 (D18) | Yellow |
-| 6 | MOSI | GPIO23 (D23) | Green |
-| 7 | MISO | GPIO19 (D19) | Blue |
-| 8 | GDO2 | GPIO2 (D2) | Gray |
+#### Pin Configuration
 
-**Notes**:
-- CC1101 requires 3.3V power (do NOT use 5V)
-- Uses ESP32 VSPI interface (pins 18, 19, 23, 5)
-- GDO2 (pin 8) is the primary data pin for receiving RF signals
-- GDO0 (pin 3) can be used for transmit or additional functionality
-- CC1101 has built-in antenna or SMA connector for external antenna
-- Keep antenna wire straight and approximately 17.3cm (quarter wavelength for 433MHz)
+| CC1101 Pin | Function | ESP32 Pin | Wire Color | Notes |
+|------------|----------|-----------|------------|-------|
+| 1 | GND | GND | Black | Ground connection |
+| 2 | VCC | 3.3V | Red | **3.3V only!** |
+| 3 | GDO0 | GPIO4 (D4) | Brown | RX data / TX capability |
+| 4 | CSN | GPIO5 (D5) | White | Chip Select (SPI) |
+| 5 | SCK | GPIO18 (D18) | Yellow | Serial Clock (SPI) |
+| 6 | MOSI | GPIO23 (D23) | Green | Master Out Slave In (SPI) |
+| 7 | MISO | GPIO19 (D19) | Blue | Master In Slave Out (SPI) |
+| 8 | GDO2 | GPIO2 (D2) | Gray | TX data / RX capability |
+
+#### Important Notes
+
+**SPI Configuration**:
+- CC1101 uses ESP32's VSPI interface (default SPI pins: 18, 19, 23, 5)
+- All SPI pins are fixed for standard ESP32 boards
+- CSN (Chip Select) can be changed if needed
+
+**Data Pins (GDO0 and GDO2)**:
+- **GDO2 (GPIO2)**: Primary pin for OOK/ASK signal transmission
+- **GDO0 (GPIO4)**: Primary pin for OOK/ASK signal reception  
+- Both pins are configurable in ESPHome for RX/TX operations
+- For receive-only operation (typical use case), GDO0 is used as the data input
+
+**Power Requirements**:
+- CC1101 **requires 3.3V power** (do NOT use 5V - this will damage the module!)
+- Current draw: ~2-4mA in receive mode, ~30mA when transmitting
+- Ensure clean 3.3V supply from ESP32
+
+**Antenna**:
+- CC1101 modules typically include a built-in stub antenna or SMA connector
+- For external antenna: use straight wire approximately 17.3cm (quarter wavelength for 433MHz)
+- Tested module: CC1101 SMA Antenna RF Transceiver Module AYWHP 433MHz
 
 ### Status LED (WS2812/WS2811)
 

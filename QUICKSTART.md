@@ -91,6 +91,8 @@ In Home Assistant:
 4. **Click Save**
 5. **Test**: Press the same RF button → Your device should respond!
 
+> For detailed editor features, backup/restore, and advanced options, see [RF433 mapping editor reference.md](RF433%20mapping%20editor%20reference.md)
+
 ## Verify It's Working
 
 ### Check ESP32 Connection
@@ -139,7 +141,9 @@ Developer Tools → Events → Listen to Events:
 
 ## Get Help
 
+- Quick start: This guide
 - Full documentation: [README.md](README.md)
+- Editor & advanced features: [RF433 mapping editor reference.md](RF433%20mapping%20editor%20reference.md)
 - Hardware guide: [WIRING.md](WIRING.md)
 - Helper setup: [HELPERS.md](HELPERS.md)
 - Issues: [GitHub Issues](https://github.com/Dschuli/rf433-remote-ha-mapper/issues)
