@@ -26,8 +26,8 @@ Configuration constants and entity references used throughout the system.
 ## Features
 
 ### Learning Mode
-- **Auto-detection**: Automatically detects new RF codes when a remote button is pressed
-- **Interactive**: Opens the editor immediately when a new code is detected
+- **Auto-detection**: Automatically detects (new) RF codes when a remote button is pressed
+- **Interactive**: Opens the editor immediately when a (new) code is detected
 - **Session Management**: Creates automatic backups before starting a learning session
 
 ### Code Mapping
@@ -419,8 +419,7 @@ www/rf433/
 - **Lit**: Web components library (loaded from CDN)
 - **Home Assistant**: Frontend components (`ha-button`, `ha-selector`, etc.)
 - **MQTT Integration**: For publishing mapping updates
-- **Command Line Integration**: For reading mapping from file
-- **Custom Scripts**: Helper scripts for file operations
+- **Custom Scripts**: Helper script for temporarily blocking RF433 event triggers
 
 ---
 
