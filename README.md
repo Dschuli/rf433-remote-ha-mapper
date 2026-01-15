@@ -9,6 +9,7 @@ A comprehensive solution for integrating 433MHz RF remote controls with Home Ass
 - **[RF433 mapping editor reference.md](RF433%20mapping%20editor%20reference.md)** - Detailed editor features and usage
 - **[HELPERS.md](HELPERS.md)** - Helper entity setup
 - **[WIRING.md](WIRING.md)** - Hardware wiring guide
+- **[3D Printing Model](case/3d%20printing%20model.md)** - 3D-printable case for ESP32 and CC1101
 
 ## Benefits
 - **Re-use existing 433 MHz remotes** (Intertechno, Elro, Brennenstuhl, A-Trust) to control modern Wi-Fi/ZigBee plugs via Home Assistant
