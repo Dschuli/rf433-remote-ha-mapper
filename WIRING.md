@@ -5,8 +5,11 @@
 1. **ESP32 Development Board** (e.g., ESP32-DevKitC)
 2. **433MHz RF Receiver Module** (CC1101 sub-GHz RF transceiver recommended, tested and reliable). Test project used a CC1101 SMA Antenna RF Transceiver Modul AYWHP 433MHz.
 3. **WS2812/WS2811 LED** (optional, for status indication)
-4. **Jumper wires**
-5. **Breadboard** (for prototyping)
+4. **Connection method** (choose one):
+   - **Jumper wires** (e.g., Dupont connectors) - either pre-made or custom crimped (crimping skills required)
+   - **Direct soldering** (soldering skills needed) for a more permanent connection
+5. **Breakout board** (optional, to support jumper wire connection)
+6. **Breadboard** (optional, for prototyping with jumper wires)
 
 ## Wiring Diagram
 
