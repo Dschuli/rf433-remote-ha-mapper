@@ -8,12 +8,13 @@ Get up and running with 433MHz RF control in Home Assistant in just a few steps!
 - [ ] MQTT broker configured (Mosquitto add-on recommended)
 - [ ] ESPHome add-on installed
 - [ ] ESP32 board and 433MHz receiver module ready
-- [ ] Basic soldering skills (for hardware connections)
+- [ ] Basic soldering skills (for hardware connections) or crimping skills (if working with custom made jumper cables)
 
 ## 5-Minute Setup
 
 ### 1. Flash the ESP32 (5 minutes)
 
+**Option A: Using ESPHome Add-on (simplest)**:
 ```bash
 # In ESPHome dashboard
 1. Copy esphome/433mhz-sniffer.yaml to your ESPHome folder
@@ -21,6 +22,22 @@ Get up and running with 433MHz RF control in Home Assistant in just a few steps!
 3. Edit esphome/secrets.yaml with your WiFi credentials
 4. Click "Install" and choose "Plug into this computer"
 5. Wait for compilation and upload
+```
+
+**Option B: Using ESPHome CLI (faster compilation)**:
+
+For better performance, especially on Raspberry Pi, install ESPHome on a more powerful computer:
+
+```bash
+# Install ESPHome (see https://esphome.io/guides/installing_esphome.html)
+
+# Copy files to a working directory (e.g., ~/esphome/)
+1. Copy esphome/433mhz-sniffer.yaml to your working directory
+2. Copy esphome/hardware-config.yaml to your working directory
+3. Edit esphome/secrets.yaml with your WiFi credentials
+
+# Compile and flash:
+esphome run 433mhz-sniffer.yaml
 ```
 
 ### 2. Wire the Hardware (5 minutes)
