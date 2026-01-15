@@ -99,7 +99,7 @@ rf_receiver_pin: GPIO13     # Change to your receiver pin
 - Use quality 5V power supply (500mA minimum, 1A recommended for headroom)
 - USB power adapters work well for this low-power project
 - Consider adding decoupling capacitors:
-  - Test device works without capacitors
+  - Test device worked well without capacitors
   - 100µF electrolytic near power input (VCC - GND)
   - 0.1µF ceramic near each IC (VCC - GND)
 - For long cable runs, use proper gauge wire
@@ -112,14 +112,19 @@ For optimal reception:
 3. **Orientation**: Keep straight and vertical if possible
 4. **Placement**: Away from power supplies and WiFi routers
 
-## Enclosure Considerations
+## Case Considerations
 
-When building an enclosure:
+When building a case:
 - Plastic is preferred (metal blocks RF signals)
 - LED should be visible (use transparent window)
-- RF receiver antenna should extend outside enclosure
+- RF receiver antenna should extend outside case
 - Ensure proper ventilation for ESP32
 - Consider mounting holes for stable placement
+- The [case](case/) folder contains a 3D-printable case option designed for a 30-pin ESP32 breakout board with Dupont jumper connections
+- You can find further ESP32 cases for 3D printing on e.g.
+  - https://www.printables.com/ or
+  - https://www.thingiverse.com/
+  - Search for ESP32
 
 ## Testing
 
