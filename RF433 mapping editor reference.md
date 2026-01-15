@@ -26,8 +26,8 @@ Configuration constants and entity references used throughout the system.
 ## Features
 
 ### Learning Mode
-- **Auto-detection**: Automatically detects new RF codes when a remote button is pressed
-- **Interactive**: Opens the editor immediately when a new code is detected
+- **Auto-detection**: Automatically detects (new) RF codes when a remote button is pressed
+- **Interactive**: Opens the editor immediately when a (new) code is detected
 - **Session Management**: Creates automatic backups before starting a learning session
 
 ### Code Mapping
