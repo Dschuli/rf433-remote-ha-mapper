@@ -92,7 +92,7 @@ Before using the RF433 Learning Card, ensure you have completed the initial setu
    - A step backup is created before saving
 
 5. **Test the Mapping**
-   - Turn off Learning Mode
+   - Make sure blocking of events is not activated
    - Press the remote button to verify it works
 
 ### Editing Existing Codes
@@ -221,7 +221,6 @@ For bulk editing or advanced modifications, export the map, edit the JSON file d
 
 - **Runtime Mapping**: `sensor.rf433_runtime_map`
   - Active mapping used by automations
-  - Backed by `rf_map_sensor.json` file
   - Published via MQTT to `rf433/map`
 
 - **Session Backup**: `sensor.rf433_session_backup`
