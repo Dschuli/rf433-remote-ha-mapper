@@ -27,22 +27,25 @@
         # Error case: RF map sensor missing or empty
         - conditions:
             - condition: template
-              value_template: "{{ rf_map is none or rf_map | count == 0 }}"
+              value_template: |
+                {{ rf_map is none or rf_map | count == 0 }}
           sequence:
             - data:
                 level: error
                 logger: rf433
-                message: "RF map sensor missing or empty! sensor=sensor.rf433_runtime_map"
+                message: |
+                  RF map sensor missing or empty! sensor=sensor.rf433_runtime_map
               action: system_log.write
 
         # Normal case: RF map exists and has entries
         - conditions:
             - condition: template
-              value_template: "{{ rf_map | count > 0 }}"
+              value_template: |
+                {{ rf_map | count > 0 }}
           sequence:
             # Find matching entry in RF map
             - variables:
-                entry: >
+                entry: |
                   {% set match = rf_map
                      | selectattr('proto', 'equalto', proto | string)
                      | selectattr('code', 'equalto', code | string)
@@ -53,7 +56,7 @@
             - target:
                 entity_id: input_text.rf433_last_event_store
               data:
-                value: >
+                value: |
                   {{ {
                     "proto": trigger.event.data.protocol | string,
                     "code":  trigger.event.data.code  | string,
@@ -63,19 +66,40 @@
 
             # Execute action if not blocked and entry is active
             - choose:
+                # Events are blocked, do nothing
                 - conditions:
                     - condition: state
                       entity_id: input_boolean.rf433_block_events
                       state: "on"
-                  sequence: [] # Events are blocked, do nothing
+                  sequence: []
 
+                # Entry found and active - execute the mapped action
                 - conditions:
                     - condition: template
-                      value_template: "{{ entry is not none and entry.active is true }}"
+                      value_template: |
+                        {{ entry is not none and entry.active is true }}
                   sequence:
-                    - target:
-                        entity_id: "{{ entry.entity }}"
-                      data: "{{ entry.service_data | default({}) }}"
-                      action: "{{ entry.service }}"
+                    # Special handling for script services
+                    - choose:
+                        - conditions:
+                            - condition: template
+                              value_template: "{{ entry.service.startswith('script.') }}"
+                          sequence:
+                            - target:
+                                entity_id: "{{ entry.entity }}"
+                              data: >
+                                {% set sdata = entry.service_data | default({}) %}
+                                {% if 'variables' in sdata %}
+                                  {{ sdata }}
+                                {% else %}
+                                  {{ {'variables': sdata} }}
+                                {% endif %}
+                              action: "{{ entry.service }}"
+                      # Default: normal service call
+                      default:
+                        - target:
+                            entity_id: "{{ entry.entity }}"
+                          data: "{{ entry.service_data | default({}) }}"
+                          action: "{{ entry.service }}"
       default: []
   mode: restart

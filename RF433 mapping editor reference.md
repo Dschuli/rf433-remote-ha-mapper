@@ -391,6 +391,16 @@ script:
 
 Then map to: `script.bedroom_night_mode`
 
+> **Note on Script Service Data**: When calling scripts, you can provide service data with or without the `variables` wrapper. Both formats are supported:
+> ```json
+> {"my_var": "value"}
+> ```
+> or
+> ```json
+> {"variables": {"my_var": "value"}}
+> ```
+> The automation will automatically wrap your service data in a `variables` object if needed.
+
 ---
 
 ## File Structure
