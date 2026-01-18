@@ -117,17 +117,28 @@ For optimal reception:
 
 ## Case Considerations
 
+### 3D-Printable Enclosure
+
 When building a case:
 - Plastic is preferred (metal blocks RF signals)
 - LED should be visible (use transparent window)
 - RF receiver antenna should extend outside case
 - Ensure proper ventilation for ESP32
 - Consider mounting holes for stable placement
-- The [case](case/) folder contains a 3D-printable case option designed for a 30-pin ESP32 breakout board with Dupont jumper connections
-- You can find further ESP32 cases for 3D printing on e.g.
-  - https://www.printables.com/ or
-  - https://www.thingiverse.com/
-  - Search for ESP32
+
+**[Download the parametric ESP32 enclosure on Printables.com](https://www.printables.com/model/1559971-parametric-esp32-esp8266-enclosure-fusion-360)**
+
+This custom-designed enclosure is specifically optimized for this project:
+- Parametric Fusion 360 design - fully customizable
+- Fits 30-pin ESP32 breakout board
+- Supports Dupont jumper connections
+- Proper ventilation and antenna routing
+- LED visibility window
+
+You can also find other ESP32 cases for 3D printing on:
+- https://www.printables.com/
+- https://www.thingiverse.com/
+- Search for "ESP32 enclosure"
 
 ## Testing
 
