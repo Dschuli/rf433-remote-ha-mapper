@@ -23,7 +23,7 @@ rf_buffer_size: 20kb # Buffer size for received signals (ESP32 specific)
 rf_dump_mode: rc_switch # Logging mode: 'rc_switch' (recommended), 'all' (verbose), or 'none' (production)
 
 # Debounce Settings
-rf_debounce_ms: 300 # Debounce time in milliseconds to prevent duplicate signals
+rf_debounce_ms: 200 # Debounce time in milliseconds to prevent duplicate signals
 
 # Status LED Brightness
 led_brightness: 40% # LED brightness level (0-100%)

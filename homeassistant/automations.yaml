@@ -15,6 +15,7 @@
 - id: rf433_event_handling
   alias: RF433MHz event handling
   description: Processes 433MHz RF events from ESPHome sniffer and executes mapped actions
+  # NOTE: The sensor name 'sensor.rf433_runtime_map' must match RUNTIME_MAPPING_SENSOR in rf433-config.js
   triggers:
     - event_type: esphome.rf433
       trigger: event

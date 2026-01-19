@@ -1,0 +1,54 @@
+alias: RF round robin dimmer
+icon: mdi:brightness-6
+mode: single
+fields:
+  light_entity:
+    description: Target light entity
+    selector:
+      entity:
+        domain: light
+  step:
+    description: Step in percent
+    selector:
+      number:
+        min: 1
+        max: 25
+        unit_of_measurement: "%"
+variables:
+  step_val: >
+    {% set s = step | default(states('input_number.dimmer_step_default')) |
+    int(10) %} {{ [1, [s, 25] | min] | max }}
+  direction_state: |
+    input_boolean.{{ light_entity.split('.', 1)[1] }}_dimmer_dir
+  current_pct: >
+    {{ (state_attr(light_entity, 'brightness') | default(0) | int(0) * 100 /
+    255) | round(0) }}
+  going_up: "{{ states(direction_state) == 'on' }}"
+  next_pct: |
+    {% if going_up %}
+      {{ [[current_pct + step_val, 100] | min, 0] | max }}
+    {% else %}
+      {{ [[current_pct - step_val, 0] | max, 100] | min }}
+    {% endif %}
+sequence:
+  - target:
+      entity_id: "{{ light_entity }}"
+    data:
+      brightness_pct: "{{ next_pct }}"
+    action: light.turn_on
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ next_pct >= 100 }}"
+        sequence:
+          - target:
+              entity_id: "{{ direction_state }}"
+            action: input_boolean.turn_off
+      - conditions:
+          - condition: template
+            value_template: "{{ next_pct <= 0 }}"
+        sequence:
+          - target:
+              entity_id: "{{ direction_state }}"
+            action: input_boolean.turn_on
+description: ""
