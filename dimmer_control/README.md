@@ -24,13 +24,25 @@ The direction automatically reverses when brightness reaches 0% or 100%.
 
 ## Requirements
 
-### System-Wide
+### System-Wide (Optional)
 
 1. **Number Helper** (input_number) - Default step size:
    - **Name**: `input_number.dimmer_step_default`
    - **Purpose**: System-wide default brightness step percentage
    - **Range**: 1-25%
    - **Recommended**: 10%
+
+2. **Number Helper** (input_number) - Default minimum brightness:
+   - **Name**: `input_number.dimmer_default_min`
+   - **Purpose**: System-wide default minimum brightness percentage
+   - **Range**: 0-100%
+   - **Recommended**: 0%
+
+3. **Number Helper** (input_number) - Default maximum brightness:
+   - **Name**: `input_number.dimmer_default_max`
+   - **Purpose**: System-wide default maximum brightness percentage
+   - **Range**: 0-100%
+   - **Recommended**: 100%
 
 ### Per Dimmer/Light
 
@@ -107,6 +119,12 @@ Copy the `rf_round_robin_dimmer` script from this directory to your Home Assista
 - **`step`** (optional): Brightness step percentage (1-25%)
   - If not provided, uses the value from `input_number.dimmer_step_default`
   - Defaults to 10% if neither is set
+- **`min`** (optional): Minimum brightness percentage (0-100%)
+  - If not provided, uses the value from `input_number.dimmer_default_min`
+  - Defaults to 0% if neither is set
+- **`max`** (optional): Maximum brightness percentage (0-100%)
+  - If not provided, uses the value from `input_number.dimmer_default_max`
+  - Defaults to 100% if neither is set
 
 **How it works**:
 1. Automatically creates direction helper entity ID from light name: `input_boolean.{light_name}_dimmer_dir`
@@ -216,6 +234,21 @@ The transition duration setting of your lights also affects the dimming experien
 
 If dimming feels too slow or unresponsive, check your light's default transition settings. Some lights or integrations have transition times configured that add to the overall delay between brightness steps.
 
+### Min/Max Brightness Range
+
+By default, the script sets brightness between 0% and 100%. You can now specify a custom minimum and maximum brightness for each light:
+- Add `min` and `max` parameters to the script call (in percent, e.g., 10 and 80)
+- Or set global defaults using `input_number.dimmer_default_min` and `input_number.dimmer_default_max`
+
+This ensures the dimmer only cycles between your preferred brightness range, matching the light's usable range or your preference.
+
+**Example service data:**
+```json
+{"light_entity": "light.bedroom_lamp", "min": 10, "max": 80}
+```
+
+If not specified, the script uses the global defaults or falls back to 0 and 100.
+
 ## Best Practices
 
 1. **Step Size**: Start with 10% and adjust based on preference
@@ -248,6 +281,8 @@ If dimming feels too slow or unresponsive, check your light's default transition
 **One-Time Setup**:
 
 - [ ] Create number helper: `input_number.dimmer_step_default` (set to 10)
+- [ ] Create number helper: `input_number.dimmer_default_min` (set to 0)
+- [ ] Create number helper: `input_number.dimmer_default_max` (set to 100)
 - [ ] Add `rf_round_robin_dimmer` script to Home Assistant
 - [ ] Set debounce to 200ms in `hardware-config.yaml`
 

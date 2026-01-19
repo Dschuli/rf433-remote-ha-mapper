@@ -79,7 +79,25 @@ mqtt:
 Or copy the sensor definitions from `homeassistant/mqtt_sensors.yaml` to your existing MQTT configuration.
 
 #### 2.2 Automations
-Copy the automation from `homeassistant/automations.yaml` to your automations file or merge it with existing automations.
+
+**Method A: Direct File Include (Recommended)**
+
+Add to your `configuration.yaml`:
+```yaml
+automation: !include automations.yaml
+```
+Then copy the file:
+```bash
+cp homeassistant/automations.yaml /config/
+```
+
+**Method B: Using UI Automation Editor**
+
+1. Go to Settings → Automations & Scenes → Create Automation
+2. Click the ⋮ menu → Edit in YAML
+3. Copy the content from `homeassistant/automations.yaml` **BUT remove the first two lines** (`- id:` and the dash before `alias:`)
+4. Start from `alias: RF433MHz event handling` onwards
+5. Save the automation
 
 #### 2.3 Scripts
 Copy the scripts from `homeassistant/scripts.yaml` to your scripts configuration.

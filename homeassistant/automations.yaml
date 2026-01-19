@@ -1,8 +1,10 @@
 # ===============================================================
 # RF433 Automations for Home Assistant
 # ===============================================================
-# Add this content to your configuration.yaml automations section
-# or include it as: automation: !include_dir_merge_list automations/
+# Method A: Add to configuration.yaml as: automation: !include automations.yaml
+# Method B: Copy to UI automation editor (Settings → Automations)
+#           IMPORTANT: When using UI editor, remove lines 15-16 (- id: and dash before alias:)
+#           Start copying from 'alias: RF433MHz event handling' onwards
 #
 # Required helper entities (create in Settings > Devices & Services > Helpers):
 # - input_text.rf433_last_event_store (Text input helper)
@@ -102,5 +104,13 @@
                             entity_id: "{{ entry.entity }}"
                           data: "{{ entry.service_data | default({}) }}"
                           action: "{{ entry.service }}"
+                        # Add delay after toggle actions to prevent rapid state changes
+                        - choose:
+                            - conditions:
+                                - condition: template
+                                  value_template: "{{ entry.service in ['toggle', 'homeassistant.toggle'] or entry.service.endswith('.toggle') }}"
+                              sequence:
+                                - delay:
+                                    milliseconds: 500
       default: []
-  mode: restart
+  mode: single

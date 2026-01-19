@@ -14,10 +14,30 @@ fields:
         min: 1
         max: 25
         unit_of_measurement: "%"
+  min:
+    description: Minimum brightness percent (optional)
+    selector:
+      number:
+        min: 0
+        max: 99
+        unit_of_measurement: "%"
+  max:
+    description: Maximum brightness percent (optional)
+    selector:
+      number:
+        min: 1
+        max: 100
+        unit_of_measurement: "%"
 variables:
   step_val: >
     {% set s = step | default(states('input_number.dimmer_step_default')) |
     int(10) %} {{ [1, [s, 25] | min] | max }}
+  min_val: >
+    {% set global_min = states('input_number.dimmer_default_min') | int(0) %}
+    {% set local_min = min | default(global_min) | int(0) %} {{ [0, [local_min, 99] | min] | max }}
+  max_val: >
+    {% set global_max = states('input_number.dimmer_default_max') | int(100) %}
+    {% set local_max = max | default(global_max) | int(100) %} {{ [1, [local_max, 100] | min] | max }}
   direction_state: |
     input_boolean.{{ light_entity.split('.', 1)[1] }}_dimmer_dir
   current_pct: >
@@ -26,9 +46,9 @@ variables:
   going_up: "{{ states(direction_state) == 'on' }}"
   next_pct: |
     {% if going_up %}
-      {{ [[current_pct + step_val, 100] | min, 0] | max }}
+      {{ [[current_pct + step_val, max_val] | min, min_val] | max }}
     {% else %}
-      {{ [[current_pct - step_val, 0] | max, 100] | min }}
+      {{ [[current_pct - step_val, min_val] | max, max_val] | min }}
     {% endif %}
 sequence:
   - target:
@@ -39,14 +59,14 @@ sequence:
   - choose:
       - conditions:
           - condition: template
-            value_template: "{{ next_pct >= 100 }}"
+            value_template: "{{ next_pct >= max_val }}"
         sequence:
           - target:
               entity_id: "{{ direction_state }}"
             action: input_boolean.turn_off
       - conditions:
           - condition: template
-            value_template: "{{ next_pct <= 0 }}"
+            value_template: "{{ next_pct <= min_val }}"
         sequence:
           - target:
               entity_id: "{{ direction_state }}"

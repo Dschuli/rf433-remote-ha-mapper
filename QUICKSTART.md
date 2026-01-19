@@ -78,7 +78,11 @@ chmod +x /config/scripts/write_json_file.sh
 cp -r homeassistant/www/* /config/www/
 ```
 
+**Alternative**: If you prefer using the UI automation editor, see the detailed instructions in [README.md](README.md#22-automations).
+
 Restart Home Assistant.
+
+**Note:** To ensure reliable operation with fast remotes, a 500ms delay is automatically added after any toggle action in the automation. This prevents rapid repeated toggles from being processed too quickly.
 
 ### 4. Create Helper Entities (2 minutes)
 
