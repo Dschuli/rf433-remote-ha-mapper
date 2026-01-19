@@ -23,12 +23,12 @@ The CC1101 is a sub-GHz RF transceiver that communicates via SPI. It supports bo
 |------------|----------|-----------|------------|-------|
 | 1 | GND | GND | Black | Ground connection |
 | 2 | VCC | 3.3V | Red | **3.3V only!** |
-| 3 | GDO0 | GPIO4 (D4) | Brown | RX data / TX capability |
+| 3 | GDO0 | GPIO13 (D13) | Brown | RX data / TX capability |
 | 4 | CSN | GPIO5 (D5) | White | Chip Select (SPI) |
 | 5 | SCK | GPIO18 (D18) | Yellow | Serial Clock (SPI) |
 | 6 | MOSI | GPIO23 (D23) | Green | Master Out Slave In (SPI) |
 | 7 | MISO | GPIO19 (D19) | Blue | Master In Slave Out (SPI) |
-| 8 | GDO2 | GPIO2 (D2) | Gray | TX data / RX capability |
+| 8 | GDO2 | GPIO14 (D14) | Gray | TX data / RX capability |
 
 #### Important Notes
 
@@ -38,8 +38,8 @@ The CC1101 is a sub-GHz RF transceiver that communicates via SPI. It supports bo
 - CSN (Chip Select) can be changed if needed
 
 **Data Pins (GDO0 and GDO2)**:
-- **GDO2 (GPIO2)**: Primary pin for OOK/ASK signal transmission
-- **GDO0 (GPIO4)**: Primary pin for OOK/ASK signal reception  
+- **GDO0 (GPIO13)**: Primary pin for OOK/ASK signal reception
+- **GDO2 (GPIO14)**: Primary pin for OOK/ASK signal transmission (optional, not used in receive-only setup)
 - Both pins are configurable in ESPHome for RX/TX operations
 - For receive-only operation (typical use case), GDO0 is used as the data input
 
@@ -157,7 +157,7 @@ After wiring:
 
 **No signals received**:
 - Check antenna length and straightness (or use CC1101 with built-in antenna)
-- Verify GDO2 (data) pin connection to GPIO13
+- Verify GDO0 (data) pin connection to GPIO13
 - Move closer to transmitter
 - Check CC1101 power (VCC must be 3.3V, NOT 5V!)
 - Verify CC1101 is properly seated on breadboard/connectors

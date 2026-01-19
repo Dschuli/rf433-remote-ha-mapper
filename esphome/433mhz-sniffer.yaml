@@ -16,6 +16,7 @@
 substitutions:
   device_name: 433mhz-sniffer-esp32
   friendly_name: 433MHz Sniffer ESP32
+  <<: !include hardware-config.yaml
 
 esphome:
   name: ${device_name}
@@ -24,17 +25,26 @@ esphome:
   platformio_options:
     upload_speed: 1500000
 
-# Include hardware configuration
-<<: !include hardware-config.yaml
+  on_boot:
+    priority: 600
+    then:
+      - light.turn_on:
+          id: status_led
+          brightness: !lambda "return id(status_brightness).state / 100.0;"
 
 # ESP32 Configuration
 esp32:
   board: ${esp32_board}
   framework:
     type: arduino
+  flash_size: 4MB
 
 # Enable logging
 logger:
+  logs:
+    light: WARN
+    script: WARN
+    number: WARN
 
 # Home Assistant API
 api:
@@ -59,16 +69,55 @@ wifi:
 captive_portal:
 
 # ===============================================================
+# SPI Bus for CC1101
+# ===============================================================
+spi:
+  clk_pin: ${spi_clk_pin}
+  miso_pin: ${spi_miso_pin}
+  mosi_pin: ${spi_mosi_pin}
+
+# ===============================================================
+# CC1101 RF Transceiver Module
+# ===============================================================
+cc1101:
+  cs_pin: ${cc1101_cs_pin}
+  frequency: ${cc1101_frequency}
+  modulation_type: ASK/OOK
+  filter_bandwidth: ${cc1101_filter_bandwidth}
+  data_rate: ${cc1101_data_rate}
+
+# ===============================================================
+# LED Brightness Control
+# ===============================================================
+number:
+  - platform: template
+    id: status_brightness
+    name: ${led_brightness_name}
+    min_value: 1
+    max_value: 100
+    step: 1
+    initial_value: ${led_brightness}
+    restore_value: true
+    optimistic: true
+
+    on_value:
+      then:
+        - light.turn_on:
+            id: status_led
+            brightness: !lambda "return x / 100.0;"
+
+# ===============================================================
 # Status LED - Visual feedback for WiFi connection status
 # ===============================================================
 light:
-  - platform: fastled_clockless
+  - platform: esp32_rmt_led_strip
     id: status_led
     pin: ${status_led_pin}
     num_leds: ${led_num_leds}
     chipset: ${led_chipset}
     rgb_order: ${led_rgb_order}
-    name: "433 Status LED"
+    internal: true
+    default_transition_length: 5ms
 
 # Update LED color based on WiFi status every 5 seconds
 interval:
@@ -80,7 +129,6 @@ interval:
             # WiFi connected → GREEN
             - light.turn_on:
                 id: status_led
-                brightness: ${led_brightness}
                 red: 0%
                 green: 100%
                 blue: 0%
@@ -88,7 +136,34 @@ interval:
             # WiFi disconnected → RED
             - light.turn_on:
                 id: status_led
-                brightness: ${led_brightness}
+                red: 100%
+                green: 0%
+                blue: 0%
+
+# ===============================================================
+# Flash LED when sending HA event
+# ===============================================================
+script:
+  - id: status_flash
+    mode: restart
+    then:
+      - light.turn_on:
+          id: status_led
+          red: 100%
+          green: 0%
+          blue: 0%
+      - delay: 500ms
+      - if:
+          condition: wifi.connected
+          then:
+            - light.turn_on:
+                id: status_led
+                red: 0%
+                green: 100%
+                blue: 0%
+          else:
+            - light.turn_on:
+                id: status_led
                 red: 100%
                 green: 0%
                 blue: 0%
@@ -147,3 +222,6 @@ remote_receiver:
         data:
           protocol: !lambda "return id(last_proto);"
           code: !lambda "return to_string(id(last_code));"
+    
+    # Flash LED to indicate event sent
+    - script.execute: status_flash
