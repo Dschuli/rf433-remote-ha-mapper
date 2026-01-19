@@ -2,12 +2,6 @@
 
 A comprehensive solution for integrating 433MHz RF remote controls with Home Assistant. This project combines an ESPHome-based RF sniffer with a powerful learning interface in Home Assistant, allowing you to easily map RF signals to Home Assistant actions.
 
-> ⚠️ **Status**
->
-> The current `main` branch is **temporarily broken** due to ongoing refactoring.
->  
-> A fix is in progress and will be released soon.
-
 ## Documentation
 
 - **[QUICKSTART.md](QUICKSTART.md)** - Get started in 5 minutes
