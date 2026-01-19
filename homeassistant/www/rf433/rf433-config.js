@@ -22,6 +22,7 @@ export const ENTITY_DOMAIN_LIST = ["switch", "light", "cover", "script", "automa
 // "alarm_control_panel", // Alarm systems - security-sensitive
 
 // MQTT Sensors and Topics
+// NOTE: If you change RUNTIME_MAPPING_SENSOR, you must also update the sensor name in the rf433_event_handling automation (automations.yaml)
 export const RUNTIME_MAPPING_SENSOR = "sensor.rf433_runtime_map";
 export const RUNTIME_MAPPING_TOPIC = "rf433/map";
 export const SESSION_BACKUP_SENSOR = "sensor.rf433_session_backup";

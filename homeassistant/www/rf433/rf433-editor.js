@@ -161,6 +161,15 @@ export class RF433Editor extends LitElement {
       'light.turn_on': [
         { label: '(clear)', value: '{}' },
         { label: 'brightness (0-255)', value: 'brightness', default: 128 },
+        { label: 'brightness_pct (0-100)', value: 'brightness_pct', default: 50 },
+        { label: 'rgb_color [R,G,B]', value: 'rgb_color', default: [255, 255, 255] },
+        { label: 'color_temp (153-500)', value: 'color_temp', default: 300 },
+        { label: 'transition (seconds)', value: 'transition', default: 1 },
+      ],
+      'light.toggle': [
+        { label: '(clear)', value: '{}' },
+        { label: 'brightness (0-255)', value: 'brightness', default: 128 },
+        { label: 'brightness_pct (0-100)', value: 'brightness_pct', default: 50 },
         { label: 'rgb_color [R,G,B]', value: 'rgb_color', default: [255, 255, 255] },
         { label: 'color_temp (153-500)', value: 'color_temp', default: 300 },
         { label: 'transition (seconds)', value: 'transition', default: 1 },
