@@ -56,7 +56,7 @@ For each light you want to control with this technique:
 ### Configuration
 
 - **Step Size**: Configurable (typically 5% or 10%)
-- **Debounce Period**: Set to **200ms** in `hardware-config.yaml` for responsive step control
+- **Debounce Period**: Set to **250** in `hardware-config.yaml` for balanced step control
 - **RF Code Mapping**: Map one or two RF buttons per light (brightness up/down, or single toggle)
 
 ## Implementation in Home Assistant
@@ -154,9 +154,9 @@ In the RF433 Learning Card:
      {"light_entity": "light.bedroom_lamp"}
      ```
      
-     Or with custom step size:
+     Or with additional cutom parameters:
      ```json
-     {"light_entity": "light.bedroom_lamp", "step": 5}
+     {"light_entity": "light.bedroom_lamp", "step": 5, "min": 5, "max": 85}
      ```
 4. Save
 
@@ -168,8 +168,8 @@ In `esphome/hardware-config.yaml`:
 
 ```yaml
 substitutions:
-  # Debounce timing - 200ms for responsive dimmer control
-  debounce_ms: "200"
+  # Debounce timing - 350ms for balanced dimmer control
+  debounce_ms: "350"
 ```
 
 ## Usage Example
@@ -206,23 +206,26 @@ data:
 
 **Per-Mapping Override**:
 
-Set `step` parameter in RF mapping service data:
+Set `step`, `min` and `max` parameter in RF mapping service data:
 ```json
-{"light_entity": "light.bedroom", "step": 5}
+{"light_entity": "light.bedroom", "step": 5, "min": 10, "max": 85}
 ```
+If you defined global defaults for `step`, `min` and `max` those parameters are optional.
 
 **Recommended Values**:
 - **`5`** - Fine control, 20 presses for 0-100%
 - **`10`** - Balanced, 10 presses for 0-100% (recommended)
 - **`20`** - Coarse control, 5 presses for 0-100%
+- **`min` and `max`** values depend on your dimmer and lamp/LED reactiveness. Best to test with the dimmer Web UI or app.
 
 ### Debounce Period
 
 In `hardware-config.yaml`:
 
-- **`debounce_ms: "200"`** - Recommended for dimming (5 presses/sec)
-- **`debounce_ms: "150"`** - Faster response (6-7 presses/sec)
-- **`debounce_ms: "300"`** - More filtering (3 presses/sec, may feel sluggish)
+This parameters controls how well the RF signal is debounced. As remotes usually send multiple bursts 
+(some even with a different sync code at the end) a low value will result in duplicate events, sometimes even with different codes, a high value will limit the number of consecutive events per long press. 
+
+- **`debounce_ms: 350`** - More filtering (3 presses/sec, may feel sluggish)
 
 ### Light Transition Duration
 
@@ -280,11 +283,11 @@ If not specified, the script uses the global defaults or falls back to 0 and 100
 
 **One-Time Setup**:
 
-- [ ] Create number helper: `input_number.dimmer_step_default` (set to 10)
-- [ ] Create number helper: `input_number.dimmer_default_min` (set to 0)
-- [ ] Create number helper: `input_number.dimmer_default_max` (set to 100)
+- [ ] (optional) Create number helper: `input_number.dimmer_step_default` (set to 10)
+- [ ] (optional) Create number helper: `input_number.dimmer_default_min` (set >= 0)
+- [ ] (optional) Create number helper: `input_number.dimmer_default_max` (set <= 100)
 - [ ] Add `rf_round_robin_dimmer` script to Home Assistant
-- [ ] Set debounce to 200ms in `hardware-config.yaml`
+- [ ] Set debounce to 350ms in `hardware-config.yaml`
 
 **Per Light**:
 
@@ -295,7 +298,7 @@ If not specified, the script uses the global defaults or falls back to 0 and 100
 
 ## Bonus: DIY Smart Plug-In Dimmer
 
-Since RF433 plug-in dimmers are hard to find, you can repurpose an old RF433 plug/dimmer case by removing the original circuitry and installing a smart wall/inline dimmer module instead. This gives you a compact, plug-in form factor with modern smart home capabilities.
+Since RF433 plug-in dimmers are hard to find, you can repurpose an old RF433 plug/dimmer case by removing the original circuitry and installing a smart wall/inline dimmer module instead. This gives you a compact, plug-in form factor with modern smart home capabilities. For high-power dimmer loads (such as high-wattage halogen lamps), ensure your enclosure has adequate ventilation or cooling cutouts to prevent overheating.
 
 See `smart plug-in dimmer case.jpeg` for a reference implementation.
 

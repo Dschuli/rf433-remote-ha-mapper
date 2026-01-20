@@ -46,12 +46,13 @@ A comprehensive solution for integrating 433MHz RF remote controls with Home Ass
 - Modern web browser (for the learning interface)
 
 ## Installation
-
 ### 1. ESPHome Setup
 
 > **Performance Note**: ESPHome compilation can be very slow on Raspberry Pi. For better performance, consider installing ESPHome on a Windows or Linux PC instead of using the Home Assistant add-on. See the [ESPHome Installation Guide](https://esphome.io/guides/installing_esphome.html) for platform-specific instructions.
 
-1. Copy the contents of the `esphome/` directory to your ESPHome configuration folder
+**Note:** The RF signal handler logic is now moved to an extra file: `rf_handlers.h`
+
+1. Copy the contents of the `esphome/` directory to your ESPHome configuration folder (including `rf_handlers.h`)
 2. Edit `esphome/secrets.yaml`:
    ```yaml
    wifi_ssid: "YourWiFiSSID"
@@ -161,6 +162,10 @@ Before mapping buttons, verify that RF signals are being received:
 
 If events appear, you're ready to start mapping!
 
+### Checking and optimizing debounce behavior for your remotes
+
+On top of checking incoming events via Developer Tools → Events,  you can see check the ESPHome logs (if you installed the sniffer via ESPHome in HA  directly) or via ´esphome logs 433mhz-sniffer.yaml´ (if you used ESPHome cli). If you see too many dulplicate events firing on pressing a key consider using a higher debounce setting.
+
 ### Learning and Mapping RF Codes
 
 For detailed instructions on using the learning interface, editor features, backup/restore, and advanced configuration options, see [RF433 mapping editor reference.md](RF433%20mapping%20editor%20reference.md).
@@ -225,12 +230,13 @@ Edit `homeassistant/www/rf433/rf433-config.js` to customize:
 rf433-remote-ha-mapper/
 ├── esphome/
 │   ├── 433mhz-sniffer.yaml       # Main ESPHome configuration
-│   ├── hardware-config.yaml       # Hardware-specific settings
-│   └── secrets.yaml               # WiFi and API credentials
+│   ├── hardware-config.yaml      # Hardware-specific settings
+│   ├── rf_handlers.h            # RF handler
+│   └── secrets.yaml             # WiFi and API credentials
 ├── homeassistant/
-│   ├── automations.yaml           # RF event processing automation
-│   ├── mqtt_sensors.yaml          # MQTT sensor definitions
-│   ├── scripts.yaml               # Helper scripts
+│   ├── automations.yaml         # RF event processing automation
+│   ├── mqtt_sensors.yaml        # MQTT sensor definitions
+│   ├── scripts.yaml             # Helper scripts
 │   └── www/
 │       ├── rf433/
 │       │   ├── rf433-learning-card.js    # Main card component
@@ -270,3 +276,4 @@ If you encounter issues or have questions:
 1. Check the Troubleshooting section above
 2. Search existing GitHub issues
 3. Create a new issue with detailed information about your setup and problem
+> **Tip:** You can test the RF433 Learning Card and editor UI without hardware. See the [Editor Reference](RF433%20mapping%20editor%20reference.md#how-to-use) for a step-by-step guide to simulating RF events.

@@ -1,8 +1,10 @@
 # RF433 Learning Card & Editor Documentation
 
+
 > **Note**: This is the detailed reference for the RF433 learning interface and editor.  
 > For initial setup, see [QUICKSTART.md](QUICKSTART.md) or [README.md](README.md).  
 > For helper entity setup, see [HELPERS.md](HELPERS.md).
+> 
 
 ## Overview
 
@@ -69,6 +71,16 @@ Before using the RF433 Learning Card, ensure you have completed the initial setu
 ---
 
 ## How to Use
+
+> **Tip:** You can test and explore the RF433 Learning Card and editor interface even if your 433MHz sniffer hardware is not yet running. To simulate an RF event:
+> 1. Open **Developer Tools → Events** in Home Assistant.
+> 2. In the **Event to fire** field, enter: `esphome.rf433`
+> 3. In the **Event data** field, enter (as valid JSON):
+>    ```json
+>    {"proto": 1, "code": 111111111}
+>    ```
+> 4. Click **Fire Event**.
+> This will trigger the learning card/editor as if a real RF code was received, allowing you to test mappings and UI behavior without hardware.
 
 ### Learning New Codes
 

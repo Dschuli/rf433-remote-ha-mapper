@@ -11,17 +11,19 @@ Get up and running with 433MHz RF control in Home Assistant in just a few steps!
 - [ ] Basic soldering skills (for hardware connections) or crimping skills (if working with custom made jumper cables)
 
 ## 5-Minute Setup
-
 ### 1. Flash the ESP32 (5 minutes)
+
+**Note:** The RF handler logic is now split into two files: `rf_handlers.h` (header) and `rf-handler.c` (implementation). Make sure to copy both files if you are customizing or extending RF handling logic.
 
 **Option A: Using ESPHome Add-on (simplest)**:
 ```bash
 # In ESPHome dashboard
 1. Copy esphome/433mhz-sniffer.yaml to your ESPHome folder
 2. Copy esphome/hardware-config.yaml to your ESPHome folder
-3. Edit esphome/secrets.yaml with your WiFi credentials
-4. Click "Install" and choose "Plug into this computer"
-5. Wait for compilation and upload
+3. Copy esphome/rf_handlers.h and esphome/rf-handler.c to your ESPHome folder (if customizing RF logic)
+4. Edit esphome/secrets.yaml with your WiFi credentials
+5. Click "Install" and choose "Plug into this computer"
+6. Wait for compilation and upload
 ```
 
 **Option B: Using ESPHome CLI (faster compilation)**:
@@ -34,7 +36,8 @@ For better performance, especially on Raspberry Pi, install ESPHome on a more po
 # Copy files to a working directory (e.g., ~/esphome/)
 1. Copy esphome/433mhz-sniffer.yaml to your working directory
 2. Copy esphome/hardware-config.yaml to your working directory
-3. Edit esphome/secrets.yaml with your WiFi credentials
+3. Copy esphome/rf_handlers.h to your working directory
+4. Edit esphome/secrets.yaml with your WiFi credentials
 
 # Compile and flash:
 esphome run 433mhz-sniffer.yaml
@@ -101,6 +104,8 @@ In Home Assistant:
    ```yaml
    type: custom:rf433-learning-card
    ```
+
+> **Tip:** You can test the RF433 Learning Card and editor UI without hardware. See the [Editor Reference](RF433%20mapping%20editor%20reference.md#how-to-use) for a step-by-step guide to simulating RF events.
 
 ## First RF Mapping (1 minute)
 

@@ -19,6 +19,8 @@ substitutions:
   <<: !include hardware-config.yaml
 
 esphome:
+  includes:
+    - rf_handlers.h
   name: ${device_name}
   friendly_name: ${friendly_name}
   build_path: ./.build
@@ -30,7 +32,7 @@ esphome:
     then:
       - light.turn_on:
           id: status_led
-          brightness: !lambda "return id(status_brightness).state / 100.0;"
+          brightness: !lambda 'return id(status_brightness).state / 100.0;'
 
 # ESP32 Configuration
 esp32:
@@ -104,7 +106,7 @@ number:
       then:
         - light.turn_on:
             id: status_led
-            brightness: !lambda "return x / 100.0;"
+            brightness: !lambda 'return x / 100.0;'
 
 # ===============================================================
 # Status LED - Visual feedback for WiFi connection status
@@ -172,56 +174,49 @@ script:
 # 433 MHz RF Receiver
 # ===============================================================
 # Global variables to store the last received signal
-globals:
+globals:  
   - id: last_proto
     type: int
   - id: last_code
     type: uint64_t
+  - id: debounced
+    type: bool
+  - id: last_raw_bits
+    type: int
+    restore_value: no
+  - id: last_raw_pulses
+    type: int
+    restore_value: no
 
 # RF receiver configuration using RMT (ESP32 hardware peripheral)
 remote_receiver:
   pin:
     number: ${rf_receiver_pin}
     inverted: false
-  dump: ${rf_dump_mode} # Logging: rc_switch (debug), all (verbose), none (production)
+  # dump: ${rf_dump_mode} # Logging: rc_switch (debug), all (verbose) - if you dont want dumping comment that line
   idle: ${rf_idle}
   filter: ${rf_filter}
   tolerance: ${rf_tolerance}
   buffer_size: ${rf_buffer_size}
 
   # Handle received RF signals
+  on_raw:
+    then:
+      - lambda: |-
+          rf_handle_raw(x, int(${rf_debounce_ms}), ${enable_raw_logging});
+
   on_rc_switch:
-    # Debounce and filter duplicate signals
-    - lambda: |-
-        static uint32_t last_time = 0;
-        static uint8_t  last_proto_local = 0;
-        static uint64_t last_code_local = 0;
-
-        uint32_t now = millis();
-
-        // ${rf_debounce_ms}ms debounce + duplicate filter
-        if (now - last_time < ${rf_debounce_ms} &&
-            x.code == last_code_local &&
-            x.protocol == last_proto_local) {
-          return;   // Ignore duplicate signal
-        }
-
-        // Update tracking variables
-        last_time = now;
-        last_code_local = x.code;
-        last_proto_local = x.protocol;
-
-        // Store in global variables for event
-        id(last_proto) = x.protocol;
-        id(last_code) = x.code;
-        return;
-
-    # Send event to Home Assistant
-    - homeassistant.event:
-        event: "esphome.rf433"
-        data:
-          protocol: !lambda "return id(last_proto);"
-          code: !lambda "return to_string(id(last_code));"
-    
-    # Flash LED to indicate event sent
-    - script.execute: status_flash
+    then:
+      - lambda: |-
+           rf_handle_rcswitch(x, int(${rf_debounce_ms}));
+      - if:
+          condition:
+            lambda: "return id(debounced);"
+          then:
+            - homeassistant.event:
+                event: "esphome.rf433"
+                data:
+                  protocol: !lambda "return id(last_proto);"
+                  code: !lambda "return to_string(id(last_code));"
+            
+            - script.execute: status_flash
