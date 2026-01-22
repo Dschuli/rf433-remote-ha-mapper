@@ -82,7 +82,7 @@ You must create a direction helper for each light you want to control:
 
 1. Add `rf_round_robin_dimmer.yaml` to your Home Assistant scripts.
 2. Ensure helpers are set up (see above).
-3. All defaults are set in the script itself. You can override `step`, `min`, and `max` per call if desired.
+3. All defaults are set in the script itself. You can override `step`, `min`, and `max` per call if desired (in the `variables:` section).
 
 ---
 
@@ -90,7 +90,7 @@ You must create a direction helper for each light you want to control:
 
 1. Add `rf_predefined_step_dimmer.yaml` to your Home Assistant scripts.
 2. Ensure helpers are set up (see above).
-3. All defaults are set in the script itself. You can override the `steps` list per call if desired.
+3. All defaults are set in the script itself. You can override the `steps` list per call if desired (in the `variables:` section). 
 
 ---
 
@@ -125,18 +125,3 @@ You can also use automations to call the scripts with the appropriate parameters
 Since RF433 plug-in dimmers are hard to find, you can repurpose an old RF433 plug/dimmer case by removing the original circuitry and installing a smart wall/inline dimmer module instead. This gives you a compact, plug-in form factor with modern smart home capabilities. For high-power dimmer loads (such as high-wattage halogen lamps), ensure your enclosure has adequate ventilation or cooling cutouts to prevent overheating.
 
 See `smart plug-in dimmer case.jpeg` for a reference implementation.
-
-Enjoy natural dimming control with your RF433 remotes!
-
-## Best Practices & Troubleshooting
-
-1. **Step Size**: Start with 10% and adjust based on preference
-2. **Test Behavior**: Try the full range (0-100-0) to ensure smooth operation
-3. **Multiple Lights**: The script is reusable for all lights - just create one toggle helper per light
-4. **Service Data Variables**: You can pass a custom step size or steps list per RF mapping for fine-tuned control
-
-**Troubleshooting:**
-- If dimming is too slow, reduce `debounce_ms` or increase `step` size
-- If dimming is too fast/skips, increase `debounce_ms` or reduce `step` size
-- If direction doesn't reverse, check the helper entity name and state
-- If the light turns off instead of dimming, check that it supports brightness and isn't set below its minimum

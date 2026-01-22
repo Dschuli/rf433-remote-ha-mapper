@@ -6,7 +6,7 @@
 #   steps: list of brightness percentages (e.g., [10,30,60,100])
 #   bounce_at_top: boolean (true: bounce at top, false: wrap to 1)
 alias: RF predefined step dimmer
-mode: single
+mode: queued
 fields:
   light_entity:
     description: Target light entity
@@ -15,35 +15,56 @@ fields:
         domain: light
   steps:
     description: List of brightness percentages (e.g., [10,30,60,100])
-    example: '[10,30,60,100]'
-    required: true
+    example: "[10,30,60,100]"
+    selector:
+      text:
+        multiline: false
   bounce_at_top:
     description: If true, after top step, next is top-1; if false, wraps to 1st
     selector:
       boolean: {}
-    default: false
+
 variables:
+  bounce_at_top: >
+    {{ bounce_at_top | default(true) | bool }}
   steps_list: >
-    {% set s = steps if steps is defined and steps is iterable %}
-    {% if not s or s|count == 0 %}
-      {% set txt = states('input_text.dimmer_steps_default') %}
-      {% set s = txt.split(',') | map('trim') | map('int') | list if txt else [10,30,60,100] %}
+    {% if steps is defined and steps is iterable and steps|count > 0 %}
+      {{ steps | sort }}
+    {% else %}
+      {{ [10, 30, 60, 100] }}
     {% endif %}
-    {{ s | sort }}
+
   current_pct: >
-    {{ (state_attr(light_entity, 'brightness') | default(0) | int(0) * 100 / 255) | round(0) }}
-  # Find the index of the closest step
+    {% set b = state_attr(light_entity, 'brightness') %}
+    {% if b is number %}
+      {{ (b * 100 / 255) | round(0) }}
+    {% else %}
+      0
+    {% endif %}
+
   idx: >
-    {% set diffs = steps_list | map('abs', current_pct - _) | list %}
-    {{ diffs.index(diffs | min) }}
+    {% set ns = namespace(min_diff=999, idx=0) %}
+    {% for i in range(steps_list | count) %}
+      {% set diff = (current_pct - steps_list[i]) | abs %}
+      {% if diff < ns.min_diff %}
+        {% set ns.min_diff = diff %}
+        {% set ns.idx = i %}
+      {% endif %}
+    {% endfor %}
+    {{ ns.idx }}
+
   at_top: >
     {{ idx == (steps_list | count - 1) }}
+
   at_bottom: >
     {{ idx == 0 }}
-  # Direction memory entity
-  direction_state: input_boolean.{{ light_entity.split('.', 1)[1] }}_dimmer_dir
-  going_up: "{{ states(direction_state) == 'on' }}"
-  # Next index logic
+
+  direction_state: >
+    input_boolean.{{ light_entity.split('.', 1)[1] }}_dimmer_dir
+
+  going_up: >
+    {{ is_state(direction_state, 'on') }}
+
   next_idx: >
     {% if going_up %}
       {% if at_top %}
@@ -62,30 +83,30 @@ variables:
         {{ idx - 1 }}
       {% endif %}
     {% endif %}
+
   next_pct: >
     {{ steps_list[next_idx] }}
+
 sequence:
   - service: light.turn_on
     target:
       entity_id: "{{ light_entity }}"
     data:
       brightness_pct: "{{ next_pct }}"
+    continue_on_error: true
+
   - choose:
       - conditions:
           - condition: template
-            value_template: >
-              {{ going_up and at_top and bounce_at_top }}
+            value_template: "{{ going_up and at_top and bounce_at_top }}"
         sequence:
           - service: input_boolean.turn_off
             target:
               entity_id: "{{ direction_state }}"
       - conditions:
           - condition: template
-            value_template: >
-              {{ not going_up and at_bottom }}
+            value_template: "{{ not going_up and at_bottom }}"
         sequence:
           - service: input_boolean.turn_on
             target:
               entity_id: "{{ direction_state }}"
-description: |
-  Steps through a predefined list of brightness percentages. Maintains direction in an input_boolean. If bounce_at_top is true, reverses at top; otherwise, wraps to first step.

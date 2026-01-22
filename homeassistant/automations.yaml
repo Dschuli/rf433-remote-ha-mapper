@@ -98,12 +98,14 @@
                                   {{ {'variables': sdata} }}
                                 {% endif %}
                               action: "{{ entry.service }}"
+                              continue_on_error: true
                       # Default: normal service call
                       default:
                         - target:
                             entity_id: "{{ entry.entity }}"
                           data: "{{ entry.service_data | default({}) }}"
                           action: "{{ entry.service }}"
+                          continue_on_error: true
                         # Add delay after toggle actions to prevent rapid state changes
                         - choose:
                             - conditions:

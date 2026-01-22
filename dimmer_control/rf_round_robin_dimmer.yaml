@@ -34,7 +34,7 @@ variables:
   min_val: >
     {{ [0, [min | default(0) | int, 99] | min] | max }}
   max_val: >
-    {{ [1, [max | default(80) | int, 100] | min] | max }}
+    {{ [1, [max | default(90) | int, 100] | min] | max }}
   direction_state: |
     input_boolean.{{ light_entity.split('.', 1)[1] }}_dimmer_dir
   current_pct: >
