@@ -1,300 +1,124 @@
 # RF433 Dimmer Control
 
-A technique to emulate long-press dimming behavior using single RF433 button presses. This allows you to use simple RF remote buttons to control light brightness in a natural, intuitive way.
+## Overview
 
-## How It Works
+This project provides two flexible dimming solutions for integrating 433MHz RF remotes with dimmable lights in Home Assistant. Since typical RF remotes only send discrete button presses (no long-press detection), both scripts simulate dimming through repeated presses—ideal for mimicking a hold-to-dim effect.
 
-Traditional RF433 remotes send discrete button press signals - they don't support true long-press detection. A long-press will result in a series of consecutive presses. This implementation uses a **round-robin toggle pattern** to simulate dimming behavior:
-
-1. **First press**: Increases brightness by a step (e.g., 10%)
-2. **Second press**: Increases brightness by another step
-3. **Continue**: Keeps increasing until maximum brightness
-4. **Next press**: Reverses direction, starts decreasing
-5. **Continue**: Decreases until minimum, then reverses again
+You can choose between two behaviors:
 
-This creates a natural dimming experience where repeated presses "walk" the brightness up and down, automatically reversing at the limits.
+### Round-Robin Step Dimmer
 
-### Direction Memory
+This implementation uses a **round-robin toggle pattern** to simulate dimming. It increases or decreases brightness by a fixed step (e.g., 10%) on each button press. When the brightness reaches a defined limit, the direction reverses.
 
-A toggle helper (input_boolean) stores the current dimming direction for each light:
-- `on` = dimming up (increasing brightness)
-- `off` = dimming down (decreasing brightness)
+- **Script**: `rf_round_robin_dimmer.yaml`  
+- **Best for**: Simple, linear dimming with a uniform step size  
+- **Customizable**: Override `step`, `min`, and `max` values per call if needed
 
-The direction automatically reverses when brightness reaches 0% or 100%.
-
-## Requirements
-
-### System-Wide (Optional)
-
-1. **Number Helper** (input_number) - Default step size:
-   - **Name**: `input_number.dimmer_step_default`
-   - **Purpose**: System-wide default brightness step percentage
-   - **Range**: 1-25%
-   - **Recommended**: 10%
-
-2. **Number Helper** (input_number) - Default minimum brightness:
-   - **Name**: `input_number.dimmer_default_min`
-   - **Purpose**: System-wide default minimum brightness percentage
-   - **Range**: 0-100%
-   - **Recommended**: 0%
-
-3. **Number Helper** (input_number) - Default maximum brightness:
-   - **Name**: `input_number.dimmer_default_max`
-   - **Purpose**: System-wide default maximum brightness percentage
-   - **Range**: 0-100%
-   - **Recommended**: 100%
-
-### Per Dimmer/Light
-
-For each light you want to control with this technique:
-
-1. **Toggle Helper** (input_boolean):
-   - **Naming Convention**: `input_boolean.{light_entity_name}_dimmer_dir`
-   - **Example**: For `light.bedroom_lamp` → create `input_boolean.bedroom_lamp_dimmer_dir`
-   - **Purpose**: Stores current dimming direction (on=up, off=down)
-
-### Configuration
-
-- **Step Size**: Configurable (typically 5% or 10%)
-- **Debounce Period**: Set to **250** in `hardware-config.yaml` for balanced step control
-- **RF Code Mapping**: Map one or two RF buttons per light (brightness up/down, or single toggle)
-
-## Implementation in Home Assistant
-
-### Step 1: Create System-Wide Default Step Helper
-
-Create a number helper for the default brightness step:
-
-**UI Method**:
-1. Go to Settings → Devices & Services → Helpers
-2. Click "Create Helper" → Number
-3. Name: `Dimmer Step Default`
-4. Entity ID: `input_number.dimmer_step_default`
-5. Minimum: 1
-6. Maximum: 25
-7. Step size: 1
-8. Unit of measurement: %
-9. Default value: 10
-10. Icon: `mdi:percent` (optional)
-
-**YAML Method** (in `configuration.yaml`):
-```yaml
-input_number:
-  dimmer_step_default:
-    name: "Dimmer Step Default"
-    min: 1
-    max: 25
-    step: 1
-    unit_of_measurement: "%"
-    icon: mdi:percent
-    initial: 10
-```
-
-### Step 2: Create Toggle Helpers
-
-For each light, create a toggle helper:
-
-**UI Method**:
-1. Go to Settings → Devices & Services → Helpers
-2. Click "Create Helper" → Toggle
-3. Name: `{light_name} Dimmer Direction`
-4. Entity ID: `input_boolean.{light_entity_name}_dimmer_dir` **(mandatory naming convention)**
-5. Icon: `mdi:arrow-up-down` (optional)
-
-**YAML Method** (in `configuration.yaml`):
-```yaml
-input_boolean:
-  bedroom_lamp_dimmer_dir:
-    name: "Bedroom Lamp Dimmer Direction"
-    icon: mdi:arrow-up-down
-```
-
-### Step 3: Add the Dimmer Script
-
-Copy the `rf_round_robin_dimmer` script from this directory to your Home Assistant scripts configuration.
-
-**Script Parameters**:
-
-- **`light_entity`** (required): The light entity to control (e.g., `light.bedroom_lamp`)
-- **`step`** (optional): Brightness step percentage (1-25%)
-  - If not provided, uses the value from `input_number.dimmer_step_default`
-  - Defaults to 10% if neither is set
-- **`min`** (optional): Minimum brightness percentage (0-100%)
-  - If not provided, uses the value from `input_number.dimmer_default_min`
-  - Defaults to 0% if neither is set
-- **`max`** (optional): Maximum brightness percentage (0-100%)
-  - If not provided, uses the value from `input_number.dimmer_default_max`
-  - Defaults to 100% if neither is set
-
-**How it works**:
-1. Automatically creates direction helper entity ID from light name: `input_boolean.{light_name}_dimmer_dir`
-2. Reads current brightness and direction
-3. Calculates next brightness level (up or down)
-4. Sets new brightness
-5. Reverses direction when reaching 0% or 100%
+**How it works:**
 
-**Example in `scripts.yaml`**:
-```yaml
-rf_round_robin_dimmer: !include ../dimmer_control/rf_round_robin_dimmer
-```
+1. Reads the current brightness and dimming direction (up or down)  
+2. Calculates the next brightness by adding or subtracting the step  
+3. Applies the new brightness level to the light  
+4. Reverses direction at the defined minimum or maximum  
 
-Or copy the full script content to your scripts configuration.
+This works with any light that supports brightness control and provides a straightforward, responsive dimming experience.
 
-### Step 4: Map RF Button to Script
+---
 
-In the RF433 Learning Card:
+### Predefined Step Dimmer
 
-1. Enable Learning Mode
-2. Press your RF button
-3. Configure mapping:
-   - **Entity**: `script.rf_round_robin_dimmer`
-   - **Service**: `script.turn_on`
-   - **Service Data**:
-     ```json
-     {"light_entity": "light.bedroom_lamp"}
-     ```
-     
-     Or with additional cutom parameters:
-     ```json
-     {"light_entity": "light.bedroom_lamp", "step": 5, "min": 5, "max": 85}
-     ```
-4. Save
+This script cycles through a predefined list of brightness levels (e.g., 10, 30, 60, 100). It's especially useful for lights that dim non-linearly or when you prefer specific preset levels.
 
-> **Note**: If you don't specify `step`, it will use the value from `input_number.dimmer_step_default`. You can change this system-wide default anytime without updating your RF mappings.
+- **Script**: `rf_predefined_step_dimmer.yaml`  
+- **Best for**: Non-linear dimming behavior or consistent preset brightness levels  
+- **Customizable**: Define a global steps list in the script or override it per call. Supports bounce or wrap-around behavior.
 
-### Step 5: Adjust Debounce Period
+**How it works:**
 
-In `esphome/hardware-config.yaml`:
+1. Identifies the current brightness and nearest matching step  
+2. Moves to the next step in the list, based on direction and options  
+3. Stores direction state in a per-light helper to ensure consistent step behavior  
 
-```yaml
-substitutions:
-  # Debounce timing - 350ms for balanced dimmer control
-  debounce_ms: "350"
-```
+---
 
-## Usage Example
 
-One RF button controls both dim up and dim down with automatic direction reversal.
+Both approaches let you use basic RF remotes to intuitively dim lights, even those without smooth transitions or linear brightness control.
 
-Map one RF button → `script.rf_round_robin_dimmer` with service data:
-```json
-{"light_entity": "light.living_room"}
-```
+---
 
-**Behavior**:
-- Press repeatedly: 10% → 20% → 30% → ... → 100% → 90% → 80% → ... → 10% → 20% ...
-- Uses step size from `input_number.dimmer_step_default`
+## Setup Instructions
 
-**Typical Setup**:
-- Button 1: On/Off toggle for the light
-- Button 2: Round-robin dimming (mapped to `script.rf_round_robin_dimmer`)
+### General Setup
 
-## Configuration Options
+#### Per-Light Helper (Required)
 
-### Step Size
+You must create a direction helper for each light you want to control:
 
-**System-Wide Default** (recommended):
+- UI: Create Helper → Toggle
+- YAML Example:
+	```yaml
+	input_boolean:
+		bedroom_lamp_dimmer_dir:
+			name: "Bedroom Lamp Dimmer Direction"
+			icon: mdi:arrow-up-down
+	```
+	Replace `bedroom_lamp` with your actual light entity name.
 
-Adjust `input_number.dimmer_step_default` in the UI or via service:
-```yaml
-service: input_number.set_value
-target:
-  entity_id: input_number.dimmer_step_default
-data:
-  value: 5
-```
+#### Debounce timing
 
-**Per-Mapping Override**:
+- Set `debounce_ms` in your ESPHome config for best experience. Example:
+	```yaml
+	substitutions:
+		debounce_ms: "350"  # 350ms for balanced dimmer control
+	```
+- Lower values (150–250ms) = faster response, but may cause duplicate events with some remotes.
+- Higher values (300–400ms) = more filtering, but may feel sluggish.
+- Adjust based on your remote and dimmer responsiveness.
+- If dimming feels too slow or unresponsive, also check your light's transition settings (some dimmers/lights add extra delay).
 
-Set `step`, `min` and `max` parameter in RF mapping service data:
-```json
-{"light_entity": "light.bedroom", "step": 5, "min": 10, "max": 85}
-```
-If you defined global defaults for `step`, `min` and `max` those parameters are optional.
+---
 
-**Recommended Values**:
-- **`5`** - Fine control, 20 presses for 0-100%
-- **`10`** - Balanced, 10 presses for 0-100% (recommended)
-- **`20`** - Coarse control, 5 presses for 0-100%
-- **`min` and `max`** values depend on your dimmer and lamp/LED reactiveness. Best to test with the dimmer Web UI or app.
+### Round-Robin Dimmer Setup
 
-### Debounce Period
+1. Add `rf_round_robin_dimmer.yaml` to your Home Assistant scripts.
+2. Ensure helpers are set up (see above).
+3. All defaults are set in the script itself. You can override `step`, `min`, and `max` per call if desired.
 
-In `hardware-config.yaml`:
+---
 
-This parameters controls how well the RF signal is debounced. As remotes usually send multiple bursts 
-(some even with a different sync code at the end) a low value will result in duplicate events, sometimes even with different codes, a high value will limit the number of consecutive events per long press. 
+### Predefined Step Dimmer Setup
 
-- **`debounce_ms: 350`** - More filtering (3 presses/sec, may feel sluggish)
+1. Add `rf_predefined_step_dimmer.yaml` to your Home Assistant scripts.
+2. Ensure helpers are set up (see above).
+3. All defaults are set in the script itself. You can override the `steps` list per call if desired.
 
-### Light Transition Duration
+---
 
-The transition duration setting of your lights also affects the dimming experience:
+### Map RF Button to Scripts (Both Approaches)
 
-- **Short transition (0-0.5s)**: Instant brightness changes, feels snappy and responsive
-- **Medium transition (1-2s)**: Smooth fade between steps, feels more gradual
-- **Long transition (3s+)**: Can feel sluggish when combined with debounce delay
+Use the RF433 Learning Card or an automation to map your RF button(s) to the desired script:
 
-If dimming feels too slow or unresponsive, check your light's default transition settings. Some lights or integrations have transition times configured that add to the overall delay between brightness steps.
+- **Entity**: `script.rf_round_robin_dimmer` or `script.rf_predefined_step_dimmer`
+- **Service**: `script.turn_on`
+- **Service Data Example**:
+	```json
+	{"light_entity": "light.bedroom_lamp"}
+	```
+	Example (Round-Robin, using all defaults):
+	```json
+	{"light_entity": "light.bedroom_lamp"}
+	```
+	Example (Round-Robin, with custom step/min/max):
+	```json
+	{"light_entity": "light.bedroom_lamp", "min":10, "max": 80, "step": 15}
+	```
+	Example (Predefined Steps):
+	```json
+	{"light_entity": "light.bedroom_lamp", "steps": [10,30,60,100], "bounce_at_top": true}
+	```
+
+You can also use automations to call the scripts with the appropriate parameters.
 
-### Min/Max Brightness Range
-
-By default, the script sets brightness between 0% and 100%. You can now specify a custom minimum and maximum brightness for each light:
-- Add `min` and `max` parameters to the script call (in percent, e.g., 10 and 80)
-- Or set global defaults using `input_number.dimmer_default_min` and `input_number.dimmer_default_max`
-
-This ensures the dimmer only cycles between your preferred brightness range, matching the light's usable range or your preference.
-
-**Example service data:**
-```json
-{"light_entity": "light.bedroom_lamp", "min": 10, "max": 80}
-```
-
-If not specified, the script uses the global defaults or falls back to 0 and 100.
-
-## Best Practices
-
-1. **Step Size**: Start with 10% and adjust based on preference
-2. **Test Behavior**: Try the full range (0-100-0) to ensure smooth operation
-3. **Multiple Lights**: The script is reusable for all lights - just create one toggle helper per light
-4. **Service Data Variables**: You can pass a custom step size per RF mapping for fine-tuned control
-
-## Troubleshooting
-
-### Dimming Too Slow
-- Reduce `debounce_ms` in hardware config (try 150ms)
-- Increase `step` size in script (try 15% or 20%)
-
-### Dimming Too Fast / Skips Steps
-- Increase `debounce_ms` (try 250ms or 300ms)
-- Reduce `step` size (try 5%)
-
-### Direction Doesn't Reverse
-- Verify toggle helper entity ID matches exactly
-- Check helper is created and available
-- Review script logic for boundary conditions (0% and 100%)
-
-### Light Turns Off Instead of Dimming
-- Ensure light supports brightness control
-- Check that `brightness_pct` is being sent correctly
-- Verify light is not at absolute minimum (some lights turn off below ~1%)
-
-## Quick Setup Checklist
-
-**One-Time Setup**:
-
-- [ ] (optional) Create number helper: `input_number.dimmer_step_default` (set to 10)
-- [ ] (optional) Create number helper: `input_number.dimmer_default_min` (set >= 0)
-- [ ] (optional) Create number helper: `input_number.dimmer_default_max` (set <= 100)
-- [ ] Add `rf_round_robin_dimmer` script to Home Assistant
-- [ ] Set debounce to 350ms in `hardware-config.yaml`
-
-**Per Light**:
-
-- [ ] Create toggle helper: `input_boolean.{light_name}_dimmer_dir`
-- [ ] Map RF button to `script.rf_round_robin_dimmer` with `light_entity` parameter
-- [ ] Test full range: press button ~20 times and observe direction reversal
-- [ ] Adjust step size if needed (either system-wide or per-mapping)
 
 ## Bonus: DIY Smart Plug-In Dimmer
 
@@ -303,3 +127,16 @@ Since RF433 plug-in dimmers are hard to find, you can repurpose an old RF433 plu
 See `smart plug-in dimmer case.jpeg` for a reference implementation.
 
 Enjoy natural dimming control with your RF433 remotes!
+
+## Best Practices & Troubleshooting
+
+1. **Step Size**: Start with 10% and adjust based on preference
+2. **Test Behavior**: Try the full range (0-100-0) to ensure smooth operation
+3. **Multiple Lights**: The script is reusable for all lights - just create one toggle helper per light
+4. **Service Data Variables**: You can pass a custom step size or steps list per RF mapping for fine-tuned control
+
+**Troubleshooting:**
+- If dimming is too slow, reduce `debounce_ms` or increase `step` size
+- If dimming is too fast/skips, increase `debounce_ms` or reduce `step` size
+- If direction doesn't reverse, check the helper entity name and state
+- If the light turns off instead of dimming, check that it supports brightness and isn't set below its minimum

@@ -30,14 +30,11 @@ fields:
         unit_of_measurement: "%"
 variables:
   step_val: >
-    {% set s = step | default(states('input_number.dimmer_step_default')) |
-    int(10) %} {{ [1, [s, 25] | min] | max }}
+    {{ [1, [step | default(10) | int, 25] | min] | max }}
   min_val: >
-    {% set global_min = states('input_number.dimmer_default_min') | int(0) %}
-    {% set local_min = min | default(global_min) | int(0) %} {{ [0, [local_min, 99] | min] | max }}
+    {{ [0, [min | default(0) | int, 99] | min] | max }}
   max_val: >
-    {% set global_max = states('input_number.dimmer_default_max') | int(100) %}
-    {% set local_max = max | default(global_max) | int(100) %} {{ [1, [local_max, 100] | min] | max }}
+    {{ [1, [max | default(80) | int, 100] | min] | max }}
   direction_state: |
     input_boolean.{{ light_entity.split('.', 1)[1] }}_dimmer_dir
   current_pct: >
