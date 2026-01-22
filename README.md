@@ -9,6 +9,7 @@ A comprehensive solution for integrating 433MHz RF remote controls with Home Ass
 - **[RF433 mapping editor reference.md](RF433%20mapping%20editor%20reference.md)** - Detailed editor features and usage
 - **[HELPERS.md](HELPERS.md)** - Helper entity setup
 - **[WIRING.md](WIRING.md)** - Hardware wiring guide
+- **[README_dimmer_control.md](dimmer_control/README_dimmer_control.md)** - RF433 dimmer control scripts and usage
 - **[3D Printable Enclosure](https://www.printables.com/model/1559971-parametric-esp32-esp8266-enclosure-fusion-360)** - Parametric case for ESP32 and CC1101 on Printables.com
 
 ## Benefits
