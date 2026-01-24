@@ -1,4 +1,4 @@
-# Dimmer Control Script: round robin & predefined steps
+# Dimmer Control Script: step-by-step & predefined steps
 # Parameters:
 #   light_entity: (required)
 #   steps: [int, int, ...] or int (default: 5)
@@ -7,7 +7,7 @@
 #   bounce_at_top: bool (default: true)
 #
 # If steps is an array with multiple values, these are used as fixed steps (predefined steps).
-# If steps is a single value, it is used as the step size (round robin).
+# If steps is a single value, it is used as the step size (step-by-step).
 # If the helper input_boolean.<light_entity>_dimmer_dir does not exist, bounce_at_top is set to false.
 
 alias: Dimmer Control
@@ -20,65 +20,80 @@ fields:
   steps:
     description: Step size (int) or list of steps (array)
     example: 10 or [10,30,60,90]
-    default: 5
-  min:
+  min_val:
     description: Minimum value (only for steps=int)
-    default: 10
-  max:
+    selector:
+      number:
+        min: 0
+        max: 99
+        step: 1
+        mode: box
+  max_val:
     description: Maximum value (only for steps=int)
-    default: 90
+    selector:
+      number:
+        min: 1
+        max: 100
+        step: 1
+        mode: box
   bounce_at_top:
     description: Bounce at top/bottom (only for steps=int)    
     selector:
       boolean: {}
 sequence:
   - variables:
+      default_steps: [ 5, 25, 50, 75, 100]
       bounce: "{{ bounce_at_top | default(true) | bool }}"
       entity: "{{ light_entity }}"
       steps: "{{ steps if steps is defined else 5 }}"
-      min_val: "{{ min | default(10) | int }}"
-      max_val: "{{ max | default(90) | int }}"
+      min_val: "{{ (min_val | default(0)) | int }}"
+      max_val: "{{ (max_val | default(100)) | int }}"
       dir_helper: "input_boolean.{{ entity.split('.')[-1] }}_dimmer_dir"
   - choose:
       - conditions:
           - condition: template
+            value_template: "{{ steps is iterable and steps | count == 0 }}"
+        sequence:
+          - variables:
+              steps: "{{ default_steps }}"
+      - conditions:
+          - condition: template
             value_template: >
-              {{ steps is iterable and steps | select('number') | list | count != steps | count }}
+              {{ steps is iterable and (
+                steps | select('number') | list | count != steps | count or
+                (steps | select('number') | select('lt', 0) | list | count > 0) or
+                (steps | select('number') | select('gt', 100) | list | count > 0)
+              ) }}
         sequence:
           - service: system_log.write
             data:
-              message: "[Dimmer Control] Warning: One or more values in 'steps' are not numbers. Script will exit."
+              message: "[Dimmer Control] Warning: One or more values in 'steps' are not numbers or not in range 0-100. Script will exit."
               level: warning
           - stop: true
             response_variable: dimmer_invalid_steps_exit
       - conditions:
           - condition: template
-            value_template: "{{ steps is iterable and steps | count == 0 }}"
+            value_template: "{{ entity in states }}"
         sequence:
           - service: system_log.write
             data:
-              message: "[Dimmer Control] Warning: 'steps' is an empty array. No dimming action will be performed."
-              level: warning
-          - stop: true
-            response_variable: dimmer_empty_steps_exit
-      - conditions:
-          - condition: template
-            value_template: "{{ state_attr(entity, 'brightness') is not number }}"
-        sequence:
-          - service: system_log.write
-            data:
-              message: "[Dimmer Control] Warning: 'light_entity' {{ entity }} is not valid or has no brightness attribute. Script will exit."
+              message: "[Dimmer Control] Warning: 'light_entity' {{ entity }} is not valid. Script will exit."
               level: warning
           - stop: true
             response_variable: dimmer_invalid_entity_exit
       - conditions:
           - condition: template
-            value_template: "{{ not state_attr(dir_helper, 'entity_id') }}"
+            value_template: "{{ dir_helper in states }}"
         sequence:
           - variables:
               bounce: false
   - variables:
-      brightness: "{{ state_attr(entity, 'brightness') | int(0) }}"
+      brightness: >
+        {% if state_attr(entity, 'brightness') is number %}
+          {{ state_attr(entity, 'brightness') | int(0) }}
+        {% else %}
+          0
+        {% endif %}
       brightness_pct: "{{ (brightness / 2.55) | round(0) | int }}"
   - choose:
       # Predefined steps mode
@@ -123,6 +138,11 @@ sequence:
                   {% endif %}
                 {% endif %}
               next_val: "{{ step_list[next_idx] }}"
+          - service: system_log.write
+            data:
+              message: |
+                [Dimmer Control DEBUG] Predefined steps: next_val={{ next_val }}
+              level: debug
           - service: light.turn_on
             target:
               entity_id: "{{ entity }}"
@@ -146,7 +166,7 @@ sequence:
                     target:
                       entity_id: "{{ dir_helper }}"
                     continue_on_error: true
-      # Round robin mode
+        #step-by-step mode
       - conditions:
           - condition: template
             value_template: "{{ steps is number or steps | count == 1 }}"
@@ -163,21 +183,28 @@ sequence:
                 {% endif %}
               next_val: >
                 {% set val = brightness_pct + (step * dir) %}
-                {% if val > max_b %}
+                {% if val >= max_b and val < max_b + step %}
+                  {{ max_b }}
+                {% elif val > max_b %}
                   {% if bounce %}
-                    {{ max_b - step }}
+                    {{ max_b }}
                   {% else %}
                     {{ min_b }}
                   {% endif %}
                 {% elif val < min_b %}
                   {% if bounce %}
-                    {{ min_b + step }}
+                    {{ min_b }}
                   {% else %}
                     {{ max_b }}
                   {% endif %}
                 {% else %}
                   {{ val }}
                 {% endif %}
+          - service: system_log.write
+            data:
+              message: |
+                [Dimmer Control DEBUG] Step-by-step: next_val={{ next_val }}
+              level: debug
           - service: light.turn_on
             target:
               entity_id: "{{ entity }}"
@@ -190,7 +217,7 @@ sequence:
                     value_template: >
                       {{ bounce and (next_val >= max_b or next_val <= min_b) }}
                 sequence:
-                  - service: input_boolean.temporary_toggle
+                  - service: input_boolean.toggle
                     target:
                       entity_id: "{{ dir_helper }}"
                     continue_on_error: true

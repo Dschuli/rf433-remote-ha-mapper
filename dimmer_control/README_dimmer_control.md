@@ -2,24 +2,27 @@
 
 ## Overview
 
-This project provides two flexible dimming solutions for integrating 433MHz RF remotes with dimmable lights in Home Assistant. Since typical RF remotes only send discrete button presses (no long-press detection), both scripts simulate dimming through repeated presses—ideal for mimicking a hold-to-dim effect.
 
-You can choose between two behaviors:
+This project provides a flexible dimming solution for integrating 433MHz RF remotes with dimmable lights in Home Assistant. Since typical RF remotes only send discrete button presses (no long-press detection), the script simulates dimming through repeated presses—ideal for mimicking a hold-to-dim effect.
 
-### Round-Robin Step Dimmer
+You can choose between two behaviors, both implemented in a single script: `dimmer_control.yaml`:
 
-This implementation uses a **round-robin toggle pattern** to simulate dimming. It increases or decreases brightness by a fixed step (e.g., 10%) on each button press. When the brightness reaches a defined limit, the direction reverses.
+### Step-by-Step Dimmer
 
-- **Script**: `rf_round_robin_dimmer.yaml`  
-- **Best for**: Simple, linear dimming with a uniform step size  
-- **Customizable**: Override `step`, `min`, and `max` values per call if needed
+This mode uses a **step-by-step pattern** to simulate dimming. It increases or decreases brightness by a fixed step (e.g., 10%) on each button press. When the brightness reaches a defined limit, the direction reverses (bounce) or wraps.
+
+- **Script**: `dimmer_control.yaml`  
+- **Best for**: Simple, linear dimming with a uniform step size
+- **Customizable**: Override  `steps`, `min_val`, and `max_val` values per call if needed. Supports bounce or wrap-around behavior.
+- **Default values** are defined in the script.
 
 **How it works:**
 
 1. Reads the current brightness and dimming direction (up or down)  
 2. Calculates the next brightness by adding or subtracting the step  
 3. Applies the new brightness level to the light  
-4. Reverses direction at the defined minimum or maximum  
+4. Reverses direction at the defined minimum or maximum (if bounce is enabled)
+5. Stores direction state in a per-light helper to ensure consistent step behavior (only needed for `bounce_at_top`). 
 
 This works with any light that supports brightness control and provides a straightforward, responsive dimming experience.
 
@@ -27,20 +30,22 @@ This works with any light that supports brightness control and provides a straig
 
 ### Predefined Step Dimmer
 
-This script cycles through a predefined list of brightness levels (e.g., 10, 30, 60, 100). It's especially useful for lights that dim non-linearly or when you prefer specific preset levels.
+This mode cycles through a predefined list of brightness levels (e.g., 10, 30, 60, 100). It's especially useful for lights that dim non-linearly or when you prefer specific preset levels.
 
-- **Script**: `rf_predefined_step_dimmer.yaml`  
+- **Script**: `dimmer_control.yaml`  
 - **Best for**: Non-linear dimming behavior or consistent preset brightness levels  
-- **Customizable**: Define a global steps list in the script or override it per call. Supports bounce or wrap-around behavior.
+- **Customizable**: Define a steps list. Supports bounce or wrap-around behavior.
+- **Default values** are defined in the script. Use empty list `[]` to access the default list.
 
 **How it works:**
 
 1. Identifies the current brightness and nearest matching step  
 2. Moves to the next step in the list, based on direction and options  
-3. Stores direction state in a per-light helper to ensure consistent step behavior  
+3. Applies the new brightness level to the light  
+4. Reverses direction at the defined minimum or maximum (if bounce is enabled)
+5. Stores direction state in a per-light helper to ensure consistent step behavior (only needed for `bounce_at_top`).   
 
 ---
-
 
 Both approaches let you use basic RF remotes to intuitively dim lights, even those without smooth transitions or linear brightness control.
 
@@ -52,7 +57,7 @@ Both approaches let you use basic RF remotes to intuitively dim lights, even tho
 
 #### Per-Light Helper (Required)
 
-You must create a direction helper for each light you want to control:
+You must create a direction helper for each light you want to control and enable `bounce_at_top` behavior. The naming convention entity-name`_dimmer_dir`is mandatory. If not (or incorrectly) set up, the lamp will always be in  wrap-around mode.
 
 - UI: Create Helper → Toggle
 - YAML Example:
@@ -78,43 +83,38 @@ You must create a direction helper for each light you want to control:
 
 ---
 
-### Round-Robin Dimmer Setup
 
-1. Add `rf_round_robin_dimmer.yaml` to your Home Assistant scripts.
+### Dimmer Control Script Setup
+
+1. Add `dimmer_control.yaml` to your Home Assistant scripts.
 2. Ensure helpers are set up (see above).
-3. All defaults are set in the script itself. You can override `step`, `min`, and `max` per call if desired (in the `variables:` section).
-
----
-
-### Predefined Step Dimmer Setup
-
-1. Add `rf_predefined_step_dimmer.yaml` to your Home Assistant scripts.
-2. Ensure helpers are set up (see above).
-3. All defaults are set in the script itself. You can override the `steps` list per call if desired (in the `variables:` section). 
+3. All defaults are set in the script itself. You can override `steps`, `bounce_at_top`, `min_val`, and `max_val` per call if desired (in the `variables:` section).
 
 ---
 
 ### Map RF Button to Scripts (Both Approaches)
 
-Use the RF433 Learning Card or an automation to map your RF button(s) to the desired script:
 
-- **Entity**: `script.rf_round_robin_dimmer` or `script.rf_predefined_step_dimmer`
+Use the RF433 Learning Card or an automation to map your RF button(s) to the script:
+
+- **Entity**: `script.dimmer_control`
 - **Service**: `script.turn_on`
 - **Service Data Example**:
+	Example (Step-by-Step, using all defaults):
 	```json
 	{"light_entity": "light.bedroom_lamp"}
 	```
-	Example (Round-Robin, using all defaults):
+	Example (Step-by-Step, with custom steps/min_val/max_val):
 	```json
-	{"light_entity": "light.bedroom_lamp"}
+	{"light_entity": "light.bedroom_lamp", "min_val":10, "max_val": 80, "steps": 15}
 	```
-	Example (Round-Robin, with custom step/min/max):
+	Example (Predefined Steps, using all defaults):
 	```json
-	{"light_entity": "light.bedroom_lamp", "min":10, "max": 80, "step": 15}
+	{"light_entity": "light.bedroom_lamp", "steps": []}
 	```
 	Example (Predefined Steps):
 	```json
-	{"light_entity": "light.bedroom_lamp", "steps": [10,30,60,100], "bounce_at_top": true}
+	{"light_entity": "light.bedroom_lamp", "steps": [10,30,60,100], "bounce_at_top": false}
 	```
 
 You can also use automations to call the scripts with the appropriate parameters.
