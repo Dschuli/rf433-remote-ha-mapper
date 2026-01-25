@@ -104,14 +104,7 @@ cp homeassistant/automations.yaml /config/
 #### 2.3 Scripts
 Copy the scripts from `homeassistant/scripts.yaml` to your scripts configuration.
 
-#### 2.4 Shell Script
-1. Copy `homeassistant/scripts/write_json_file.sh` to `/config/scripts/`
-2. Make it executable:
-   ```bash
-   chmod +x /config/scripts/write_json_file.sh
-   ```
-
-#### 2.5 Frontend Files
+#### 2.4 Frontend Files
 Copy all files from `homeassistant/www/` to your `/config/www/` directory:
 ```bash
 cp -r homeassistant/www/* /config/www/

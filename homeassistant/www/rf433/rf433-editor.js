@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "https://unpkg.com/lit@2/index.js?module";
-import { ENTITY_DOMAIN_LIST } from "./rf433-config.js";
+import { ENTITY_DOMAIN_LIST, CUSTOM_COMMON_SERVICE_DATA_KEYS, PREFILL_SERVICE_DATA } from "./rf433-config.js";
 import { logger } from "../utils/rf433-utils.js";
 import { rf433Theme } from "./styles/rf433-theme.js";
 import { rf433Layout } from "./styles/rf433-layout.js";
@@ -184,7 +184,13 @@ export class RF433Editor extends LitElement {
       ],
     };
 
-    return keyTemplates[service] || [{ label: '(clear)', value: '{}' }];
+    // Merge custom keys from config
+    let merged = keyTemplates[service] ? [...keyTemplates[service]] : [{ label: '(clear)', value: '{}' }];
+    if (CUSTOM_COMMON_SERVICE_DATA_KEYS[service]) {
+      // Append custom keys (or you could merge/override as needed)
+      merged = merged.concat(CUSTOM_COMMON_SERVICE_DATA_KEYS[service]);
+    }
+    return merged;
   }
 
   _clearServiceDataValidation() {
@@ -229,6 +235,30 @@ export class RF433Editor extends LitElement {
         // Clear validation state after update
         setTimeout(() => this._clearServiceDataValidation(), 0);
         return;
+      }
+    }
+
+    // Prefill service_data for specific entity/service combinations, but only if blank
+    if ((field === 'entity' || field === 'service')) {
+      const entity = field === 'entity' ? value : this._working?.entity;
+      const service = field === 'service' ? value : this._working?.service;
+      const key = entity && service ? `${entity}|${service}` : null;
+      const currentServiceData = this._working?.service_data;
+      const isBlank =
+        currentServiceData == null ||
+        (typeof currentServiceData === 'object' && Object.keys(currentServiceData).length === 0);
+      if (key && PREFILL_SERVICE_DATA[key] && isBlank) {
+        try {
+          const prefill = JSON.parse(PREFILL_SERVICE_DATA[key]);
+          this._working['service_data'] = prefill;
+          this.dispatchEvent(new CustomEvent("draft-changed", {
+            detail: { field: 'service_data', value: prefill },
+            bubbles: true,
+            composed: true
+          }));
+        } catch (e) {
+          logger.error('Failed to parse PREFILL_SERVICE_DATA for', key, e);
+        }
       }
     }
 
