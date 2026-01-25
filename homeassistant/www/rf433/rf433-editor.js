@@ -17,6 +17,8 @@ export class RF433Editor extends LitElement {
     _entityCacheError: { state: true },
     disabled: { type: Boolean },
     existing: { type: Boolean },
+    _showEntitySelector: { state: true },
+    _showCommonParamSelector: { state: true },
   };
 
   constructor() {
@@ -27,6 +29,8 @@ export class RF433Editor extends LitElement {
     this._entityDomainList = ENTITY_DOMAIN_LIST;
     this._cachedEntities = null;
     this._entityCacheError = null;
+    this._showEntitySelector = false;
+    this._showCommonParamSelector = true;
 
     // Add global unhandled rejection handler for WebSocket errors
     this._boundRejectionHandler = this._handleUnhandledRejection.bind(this);
@@ -419,32 +423,97 @@ export class RF433Editor extends LitElement {
       }}
             >
             </ha-textfield>
-            ${this._getCommonServiceDataKeys().length > 1 ? html`
-              <ha-selector
-                .hass=${this.hass}
-                .label=${"Add common parameter"}
-                .value=${""}
-                .required=${false}
-                .selector=${{
-          select: {
-            options: this._getCommonServiceDataKeys().map(k => k.label),
-            custom_value: false,
-            mode: "dropdown"
-          }
-        }}
-                ?disabled=${this.disabled}
-                @value-changed=${e => {
-          const label = e.detail.value;
-          const template = this._getCommonServiceDataKeys().find(k => k.label === label);
-          if (template && template.value) {
-            this._addServiceDataKey(template.value);
-            setTimeout(() => {
-              const selector = this.shadowRoot?.querySelector('ha-selector[label="Add common parameter"]');
-              if (selector) selector.value = '';
-            }, 100);
-          }
-        }}
-              ></ha-selector>
+            ${this._getCommonServiceDataKeys().length > 1 && this._showCommonParamSelector ? html`
+              <div style="display: flex; flex-direction: column; width: 100%;">
+                <ha-selector
+                  .hass=${this.hass}
+                  .label=${"Add common parameter"}
+                  .value=${""}
+                  .required=${false}
+                  .selector=${{
+            select: {
+              options: (() => {
+                const allowed = ["script.turn_on"];
+                const currentService = this._working?.service;
+                if (allowed.includes(currentService)) {
+                  return ["Select entity", ...this._getCommonServiceDataKeys().map(k => k.label)];
+                }
+                return this._getCommonServiceDataKeys().map(k => k.label);
+              })(),
+              custom_value: false,
+              mode: "dropdown"
+            }
+          }}
+                  ?disabled=${this.disabled}
+                  @value-changed=${e => {
+            const label = e.detail.value;
+            if (label === "Select entity") {
+              this._showEntitySelector = true;
+            } else {
+              const template = this._getCommonServiceDataKeys().find(k => k.label === label);
+              if (template && template.value) {
+                this._addServiceDataKey(template.value);
+              }
+            }
+            // Hide the selector, then show it again after a tick to force remount
+            this._showCommonParamSelector = false;
+            setTimeout(() => { this._showCommonParamSelector = true; }, 0);
+          }}
+                ></ha-selector>
+                ${this._showEntitySelector ? html`
+                  <div style="position: relative; margin-top: 8px; width: 100%;">
+                    <ha-selector
+                      .hass=${this.hass}
+                      .label=${"Select entity to add"}
+                      .value=${""}
+                      .required=${true}
+                      style="width: 100%;"
+                      .selector=${{
+                        entity: { domain: this._entityDomainList }
+                      }}
+                      @value-changed=${e => {
+                        const selected = e.detail.value;
+                        if (selected) {
+                          // Insert selected entity_id at cursor position in the service data text field
+                          const textField = this.shadowRoot?.querySelector('ha-textfield[label="Service data (JSON, optional)"]');
+                          // Try to get the native input/textarea inside ha-textfield
+                          const nativeInput = textField && (textField.inputElement || textField._inputElement || textField.renderRoot?.querySelector('textarea, input'));
+                          if (nativeInput) {
+                            const start = nativeInput.selectionStart || 0;
+                            const end = nativeInput.selectionEnd || 0;
+                            const value = nativeInput.value || '';
+                            const before = value.substring(0, start);
+                            const after = value.substring(end);
+                            const insert = selected;
+                            nativeInput.value = before + insert + after;
+                            // Move cursor after inserted text
+                            nativeInput.selectionStart = nativeInput.selectionEnd = start + insert.length;
+                            // Trigger input event to update state
+                            nativeInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+                            nativeInput.focus();
+                          }
+                          // Ensure the selector closes after insertion
+                          setTimeout(() => { this._showEntitySelector = false; }, 0);
+                        } else {
+                          this._showEntitySelector = false;
+                        }
+                      }}
+                    ></ha-selector>
+                    <button
+                      @click=${() => {
+                        this._showEntitySelector = false;
+                        // Reset the add common parameter dropdown so 'Select entity' can be chosen again
+                        setTimeout(() => {
+                          const selector = this.shadowRoot?.querySelector('ha-selector[label="Add common parameter"]');
+                          if (selector) selector.value = '';
+                        }, 100);
+                      }}
+                      style="position: absolute; top: 4px; right: 4px; background: #fff; border: none; border-radius: 50%; width: 24px; height: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); cursor: pointer; font-size: 16px; line-height: 24px; padding: 0; z-index: 10;"
+                      title="Close"
+                    >&#10005;</button>
+                  </div>
+                ` : ''}
+              </div>
             ` : html`<div></div>`}
           </div>
         <div>Optional data:</div>
