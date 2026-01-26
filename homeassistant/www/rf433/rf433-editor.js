@@ -329,6 +329,52 @@ export class RF433Editor extends LitElement {
   }
 
   // ========================================
+  // Helper Methods
+  // ========================================
+
+   // Smart insert entity id into JSON string
+  _smartInsertEntityId(value, selectionStart, selectionEnd, entityId) {
+    // Robuste Ersetzung: Wenn Cursor innerhalb eines Strings oder direkt vor dem schließenden " steht
+    if (selectionStart === selectionEnd) {
+      // Finde das öffnende " vor dem Cursor
+      let openQuote = value.lastIndexOf('"', selectionStart - 1);
+      // Finde das schließende " nach dem Cursor
+      let closeQuote = value.indexOf('"', selectionStart);
+      if (openQuote !== -1 && closeQuote !== -1 && openQuote < selectionStart && selectionStart <= closeQuote) {
+        // Cursor steht innerhalb eines Strings oder direkt vor dem schließenden "
+        const before = value.slice(0, openQuote + 1);
+        const after = value.slice(closeQuote);
+        const newValue = before + entityId + after;
+        const newCursor = before.length + entityId.length;
+        return { newValue, newCursor };
+      }
+    }
+    // Standardverhalten
+    const structural = /[\[\]\{\}:,]/g;
+    let left = selectionStart - 1;
+    let right = selectionEnd;
+    while (left >= 0 && !structural.test(value[left])) left--;
+    while (right < value.length && !structural.test(value[right])) right++;
+    let before = value.slice(0, left + 1);
+    let after = value.slice(right);
+    let region = value.slice(left + 1, right);
+    let trimmed = region.trim();
+    let newRegion;
+    if (/^".*"$/.test(trimmed)) {
+      newRegion = '"' + entityId + '"';
+    } else {
+      newRegion = '"' + entityId + '"';
+    }
+    let newValue = before + ' ' + newRegion + ' ' + after;
+    newValue = newValue.replace(/ +/g, ' ');
+    const cursor = (before + ' ' + '"' + entityId + '"').length;
+    return {
+      newValue,
+      newCursor: cursor
+    };
+  }
+
+  // ========================================
   // Rendering
   // ========================================
 
@@ -406,10 +452,20 @@ export class RF433Editor extends LitElement {
               .multiline=${true}
               .rows=${3}
               @input=${e => {
+        const val = e.target.value;
+        // Wenn Feld komplett leer ist oder nur aus zwei Anführungszeichen besteht, service_data auf {} setzen, aber das Textfeld leer lassen
+        if (val.trim() === "" || val.trim() === "\"\"") {
+          this._change("service_data", {});
+          e.target.value = "";
+          e.target.invalid = false;
+          e.target.validationMessage = "";
+          e.target.helperPersistent = true;
+          e.target.reportValidity?.();
+          return;
+        }
         try {
-          const parsed = JSON.parse(e.target.value || "{}");
+          const parsed = JSON.parse(val);
           this._change("service_data", parsed);
-
           e.target.invalid = false;
           e.target.validationMessage = "";
           e.target.helperPersistent = true;
@@ -482,13 +538,9 @@ export class RF433Editor extends LitElement {
                             const start = nativeInput.selectionStart || 0;
                             const end = nativeInput.selectionEnd || 0;
                             const value = nativeInput.value || '';
-                            const before = value.substring(0, start);
-                            const after = value.substring(end);
-                            const insert = selected;
-                            nativeInput.value = before + insert + after;
-                            // Move cursor after inserted text
-                            nativeInput.selectionStart = nativeInput.selectionEnd = start + insert.length;
-                            // Trigger input event to update state
+                            const { newValue, newCursor } = this._smartInsertEntityId(value, start, end, selected);
+                            nativeInput.value = newValue;
+                            nativeInput.selectionStart = nativeInput.selectionEnd = newCursor;
                             nativeInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
                             nativeInput.focus();
                           }

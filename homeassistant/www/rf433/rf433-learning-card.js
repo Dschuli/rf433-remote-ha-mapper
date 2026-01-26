@@ -66,6 +66,30 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     this.setLastEventData();
     this._setSessionBackupHint();
 
+    // Restore learning mode from localStorage if available
+    const savedLearning = localStorage.getItem('rf433_learning_mode');
+    if (savedLearning !== null) {
+      this._learningMode = savedLearning === 'true';
+    }
+
+    // Save learning mode to localStorage on change
+    this._learningModeObserver = () => {
+      localStorage.setItem('rf433_learning_mode', this._learningMode ? 'true' : 'false');
+    };
+    this.addEventListener('learning-mode-changed', this._learningModeObserver);
+
+    // Listen for tab visibility changes
+    this._onVisibilityChange = () => {
+      if (!document.hidden) {
+        // Tab wurde reaktiviert: Learning-Status aus localStorage wiederherstellen
+        const saved = localStorage.getItem('rf433_learning_mode');
+        if (saved !== null) {
+          this._learningMode = saved === 'true';
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
+
     // Suppress translation loading errors from HA's internal translation system
     // These occur because HA tries to load translations for custom cards but they don't exist
     // Also suppress "Connection lost" errors from ha-selector and other HA components
@@ -89,6 +113,12 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     super.disconnectedCallback();
     if (this._unhandledRejectionHandler) {
       window.removeEventListener('unhandledrejection', this._unhandledRejectionHandler);
+    }
+    if (this._learningModeObserver) {
+      this.removeEventListener('learning-mode-changed', this._learningModeObserver);
+    }
+    if (this._onVisibilityChange) {
+      document.removeEventListener('visibilitychange', this._onVisibilityChange);
     }
   }
 
@@ -365,6 +395,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
 
     this._undoDisabled = true;
     this._learningMode = e.target.checked;
+    this.dispatchEvent(new CustomEvent('learning-mode-changed'));
     if (this._learningMode) {
       this._lastHandledEventTs = this._lastTs;
       this._lockedPcc = null;

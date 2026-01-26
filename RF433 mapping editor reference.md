@@ -171,10 +171,11 @@ For bulk editing or advanced modifications, export the map, edit the JSON file d
 
 - **Service Data**: JSON object with service parameters
   - Validated in real-time
-  - Common parameters available via dropdown (currently only for light - turn_on):
+  - Common parameters available via dropdown (e.g for `light.turn_on`):
     - **Light**: brightness, rgb_color, color_temp, transition
     - **Cover**: position
     - **Media Player**: volume_level
+    Note: The currently hardcoded list of common parameters by service can be customized/extended via `rf433-config.js`
 
 - **Active**: Enable/disable the mapping (default: ON)
 
@@ -193,6 +194,18 @@ For bulk editing or advanced modifications, export the map, edit the JSON file d
 - **Channel**: Channel identifier for multi-channel devices
   - Auto-suggests from existing values
   - Examples: "1", "2", "A", "B"
+
+### Additional Editor Features
+
+- **Add Custom Common Parameters**: 
+  - You can add custom common parameters to the service data via the dropdown, as defined in your configuration (`rf433-config.js`).
+  - These parameters are available for quick insertion and can be tailored to your use case.
+
+- **Preset Service Data for Entity/Service**:
+  - If a preset for a specific entity/service combination is defined in the config, the editor will automatically suggest or prefill the corresponding service data.
+
+- **Select Entity Option in Common Params**:
+  - When using the common parameter dropdown, you can choose the special option "Select entity" to insert an entity_id at the current cursor position in the service data field. This is especially useful for scripts or advanced automations. For `script.turn` on only
 
 ### Editor Behavior
 
