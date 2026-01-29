@@ -85,6 +85,7 @@ Or copy the sensor definitions from `homeassistant/mqtt_sensors.yaml` to your ex
 
 **Zigbee Button Mapping:**
 A ready-made automation is included to let you use the mapping editor for Zigbee devices (via ZHA). This allows you to define actions in Home Assistant that are triggered by Zigbee button presses, using the same workflow as for RF433 remotes. See `homeassistant/automations.yaml` for details and customization.
+**Note**The same technique could easily be used to integrate other event types into the mapping/mapping editor.
 
 **Method A: Direct File Include (Recommended)**
 
