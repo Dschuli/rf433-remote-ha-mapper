@@ -30,6 +30,7 @@ A comprehensive solution for integrating 433MHz RF remote controls with Home Ass
 - **Debouncing**: Built-in protection against duplicate signals
 - **Status LED**: Visual WiFi connection and remote action feedback
 - **Event Blocking**: Option to temporarily disable RF event processing during learning
+- **Zigbee Button Mapping**: Use the same mapping editor to define actions for Zigbee devices—trigger automations or scenes in Home Assistant from Zigbee button presses, just like with RF433 remotes.
 
 ## Requirements
 
@@ -82,6 +83,9 @@ Or copy the sensor definitions from `homeassistant/mqtt_sensors.yaml` to your ex
 
 #### 2.2 Automations
 
+**Zigbee Button Mapping:**
+A ready-made automation is included to let you use the mapping editor for Zigbee devices (via ZHA). This allows you to define actions in Home Assistant that are triggered by Zigbee button presses, using the same workflow as for RF433 remotes. See `homeassistant/automations.yaml` for details and customization.
+
 **Method A: Direct File Include (Recommended)**
 
 Add to your `configuration.yaml`:
@@ -97,9 +101,11 @@ cp homeassistant/automations.yaml /config/
 
 1. Go to Settings → Automations & Scenes → Create Automation
 2. Click the ⋮ menu → Edit in YAML
-3. Copy the content from `homeassistant/automations.yaml` **BUT remove the first two lines** (`- id:` and the dash before `alias:`)
-4. Start from `alias: RF433MHz event handling` onwards
+3. Copy the content from `homeassistant/automations.yaml` starting from `alias: RF433MHz event handling` up to the comment for the second automation as below
 5. Save the automation
+
+Do the same for the `alias: Zigbee Remote → RF433 Auto Code`
+
 
 #### 2.3 Scripts
 Copy the scripts from `homeassistant/scripts.yaml` to your scripts configuration.

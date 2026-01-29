@@ -116,3 +116,50 @@
                                     milliseconds: 500
       default: []
   mode: single
+
+# --- Zigbee Remote to RF433 Automation ---
+# This automation listens for Zigbee remote events (from ZHA),
+# extracts the device and button press type, and generates a corresponding
+# RF433 code to be sent via ESPHome. This to use the rf433-editor mapping features to define actions for Zigbee remotes.
+# The RF433 code is calculated as:
+# RF protocol: 10
+# Remote ID: last 6 hex digits of IEEE address converted to decimal
+# Endpoint ID: endpoint where the event originated (button pressed)
+# RF Code: (Remote ID * 1000) + (Endpoint ID * 100) + Press ID (= 1 for short press, 2 for double press, 3 for long press)
+#
+- id: zigbee_remote_to_rf433_auto_code
+  alias: Zigbee Remote → RF433 Auto Code
+  mode: single
+
+  trigger:
+    - platform: event
+      event_type: zha_event
+
+  variables:
+    ieee: "{{ trigger.event.data.device_ieee }}"
+    ep: "{{ trigger.event.data.endpoint_id }}"
+    cmd: "{{ trigger.event.data.command }}"
+
+    remote_id: "{{ ieee.replace(':','')[-6:] | int(base=16) }}"
+
+    press_id: >
+      {% if cmd == "remote_button_short_press" %} 1
+      {% elif cmd == "remote_button_double_press" %} 2
+      {% elif cmd == "remote_button_long_press" %} 3
+      {% else %} 0
+      {% endif %}
+
+    rf_code: >
+      {{ remote_id * 1000 + ep * 100 + press_id }}
+
+  action:
+    - condition: template
+      value_template: "{{ press_id != 0 }}"
+
+    - event: esphome.rf433
+      event_data:
+        protocol: 10
+        code: "{{ rf_code }}"
+        remote_id: "{{ remote_id }}"
+        button: "{{ button }}"
+        press: "{{ cmd }}"
