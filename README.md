@@ -30,7 +30,7 @@ A comprehensive solution for integrating 433MHz RF remote controls with Home Ass
 - **Debouncing**: Built-in protection against duplicate signals
 - **Status LED**: Visual WiFi connection and remote action feedback
 - **Event Blocking**: Option to temporarily disable RF event processing during learning
-- **Zigbee Button Mapping**: Use the same mapping editor to define actions for Zigbee devices—trigger automations or scenes in Home Assistant from Zigbee button presses, just like with RF433 remotes.
+- **Zigbee Button Mapping**: Use the same mapping editor to define actions for Zigbee devices — trigger automations or scenes in Home Assistant from Zigbee button presses, just like with RF433 remotes.
 
 ## Requirements
 
@@ -81,11 +81,11 @@ mqtt:
 ```
 Or copy the sensor definitions from `homeassistant/mqtt_sensors.yaml` to your existing MQTT configuration.
 
+
 #### 2.2 Automations
 
-**Zigbee Button Mapping:**
-A ready-made automation is included to let you use the mapping editor for Zigbee devices (via ZHA). This allows you to define actions in Home Assistant that are triggered by Zigbee button presses, using the same workflow as for RF433 remotes. See `homeassistant/automations.yaml` for details and customization.
-**Note**The same technique could easily be used to integrate other event types into the mapping/mapping editor.
+**RF433 + Zigbee Button Mapping:**
+A single automation now handles both RF433 and Zigbee button events. This unified automation stores event data and executes mapped actions for both types of remotes, using the same mapping editor workflow. See `homeassistant/automations.yaml` for details and customization.
 
 **Method A: Direct File Include (Recommended)**
 
@@ -93,7 +93,7 @@ Add to your `configuration.yaml`:
 ```yaml
 automation: !include automations.yaml
 ```
-Then copy the file:
+Then copy the file: (or add to your existing automations.yaml)
 ```bash
 cp homeassistant/automations.yaml /config/
 ```
@@ -102,10 +102,8 @@ cp homeassistant/automations.yaml /config/
 
 1. Go to Settings → Automations & Scenes → Create Automation
 2. Click the ⋮ menu → Edit in YAML
-3. Copy the content from `homeassistant/automations.yaml` starting from `alias: RF433MHz event handling` up to the comment for the second automation as below
-5. Save the automation
-
-Do the same for the `alias: Zigbee Remote → RF433 Auto Code`
+3. Copy the content from `homeassistant/automations.yaml` starting from `alias: RF433 + Zigbee Remotes Button Handler`
+4. Save the automation
 
 
 #### 2.3 Scripts

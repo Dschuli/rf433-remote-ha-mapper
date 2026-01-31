@@ -2,7 +2,7 @@
  * RF433 Learning Card Configuration
  * ========================================================= */
 
-// IMPORTANT: After making changes to this file, clear your browser cache and 
+// IMPORTANT: After making changes to this file, clear your browser cache and
 // Home Assistant companion app cache (if used) to ensure the updated code is loaded.
 
 // Entity domains supported for learning/edit mode
@@ -22,38 +22,45 @@ export const ENTITY_DOMAIN_LIST = ["switch", "light", "cover", "script", "automa
 *   "alarm_control_panel", // Alarm systems - security-sensitive
 */
 
-/* Custom common service data keys (by service)
+/* Custom common service data for specific entity/service combinations allowing wildcard '*'
+*   Format: { '<entity>|<service>': [ { label: '<label>', value: '<service_data_key>', default: <default_value> }, ... ] }
 *  Example structure:
 *   {
 *      'light.turn_on': [ { label: 'custom_param', value: 'custom_param', default: 42 } ],
 *      'switch.toggle': [ ... ]
 *   }
 */
-
 export const CUSTOM_COMMON_SERVICE_DATA_KEYS = {
-	'script.turn_on': [
+	'*dimmer_control|script.turn_on': [
 		{ label: 'light_entity', value: 'entity_id', default: '' },
 		{ label: 'steps', value: 'steps', default: 5 },
 		{ label: 'bounce_at_top', value: 'bounce_at_top', default: false },
-        { label: 'min_val', value: 'min_val', default: 0 },
-        { label: 'max_val', value: 'max_val', default: 100 },
-	], // For script dimmer_control
-	// 'light.turn_on': [ { label: 'custom_param', value: 'custom_param', default: 42 }, ],
+		{ label: 'min_val', value: 'min_val', default: 0 },
+		{ label: 'max_val', value: 'max_val', default: 100 },
+	],
 };
 
-/* Prefill service data for specific entity/service combinations
-*    Format: { '<entity_id>|<service>': '<prefill string>' }
-*   Example: { 'light.living_room|light.turn_on': '{"brightness":128}' }
+/* Prefill service data for specific entity/service combinations allowing wildcard '*'
+*   Format: {'<entity_id>|<service>': '<prefill string>',......}// Add more prefill entries as needed
+*	  Example structure: {
+*   'light.living_room|light.turn_on': '{"brightness":128}',
+*   'switch.garden_lights|switch.turn_on': '{"duration":60}'
+*   }
 */
 export const PREFILL_SERVICE_DATA = {
-    'script.dimmer_control|script.turn_on': '{"light_entity":"  ","steps":5,"bounce_at_top":false}',
-	// 'light.living_room|light.turn_on': '{"brightness":128}',
-	// Add more combinations as needed
+	'*.dimmer_control|script.turn_on': '{"light_entity":" ","steps":5,"bounce_at_top":false}'
 };
+
 
 
 // Default configuration values
-export const DEFAULT_BLOCK_SECONDS = 30;
+
+/* Automatically unblock event actions on leaving the learning card
+*		Note: Settintg AUTO_UNBLOCK to false can lead to unintended event blocking after leaving editor,
+*		when a long blocking period is set.
+*/
+export const AUTO_UNBLOCK = true;
+export const DEFAULT_BLOCK_SECONDS = 30;	// Default seconds to block event actions
 
 // Logging levels: 0 = off, 1 = error only, 2 = error + warn, 3 = error + warn + info, 4 = all (debug)
 export const LOG_LEVEL = 2;

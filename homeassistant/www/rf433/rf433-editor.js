@@ -31,6 +31,7 @@ export class RF433Editor extends LitElement {
     this._entityCacheError = null;
     this._showEntitySelector = false;
     this._showCommonParamSelector = true;
+    this._mergedServiceDataKeys = this._computeMergedServiceDataKeys();
 
     // Add global unhandled rejection handler for WebSocket errors
     this._boundRejectionHandler = this._handleUnhandledRejection.bind(this);
@@ -122,9 +123,19 @@ export class RF433Editor extends LitElement {
       logger.debug("RF433Editor: exiting?", this.existing);
       // First assignment only
       if (!this._baseline) {
-        logger.info("RF433Editor: initializing baseline");
+        logger.debug("RF433Editor: initializing baseline");
         this._baseline = structuredClone(this.draft);
         this._working = structuredClone(this.draft);
+        // Prefill button from temp.pressed if present and button is ""
+        if (
+          this._working &&
+          this._working.button === "" &&
+          this._working.temp &&
+          typeof this._working.temp.pressed === "string" &&
+          this._working.temp.pressed !== ""
+        ) {
+          this._working.button = this._working.temp.pressed;
+        }
       }
     }
 
@@ -157,44 +168,166 @@ export class RF433Editor extends LitElement {
     return result;
   }
 
-  _getCommonServiceDataKeys() {
-    const service = this.draft.service;
-    if (!service) return [];
+  _computeMergedServiceDataKeys() {
+    // Array of { key: "entity|service", options: [...] }
+    const keyTemplates = [
+      {
+        key: '*|light.turn_on', options: [
+          { label: 'brightness (0–255)', value: 'brightness', default: 128 },
+          { label: 'brightness_pct (0–100)', value: 'brightness_pct', default: 50 },
+          { label: 'rgb_color [R,G,B]', value: 'rgb_color', default: [255, 255, 255] },
+          { label: 'color_temp (153–500)', value: 'color_temp', default: 300 },
+          { label: 'transition (seconds)', value: 'transition', default: 1 }
+        ]
+      },
+      {
+        key: '*|light.toggle', options: [
+          { label: 'brightness (0–255)', value: 'brightness', default: 128 },
+          { label: 'brightness_pct (0–100)', value: 'brightness_pct', default: 50 },
+          { label: 'rgb_color [R,G,B]', value: 'rgb_color', default: [255, 255, 255] },
+          { label: 'color_temp (153–500)', value: 'color_temp', default: 300 },
+          { label: 'transition (seconds)', value: 'transition', default: 1 }
+        ]
+      },
+      {
+        key: '*|fan.turn_on', options: [
+          { label: 'percentage (0–100)', value: 'percentage', default: 50 },
+          { label: 'preset_mode (string)', value: 'preset_mode', default: 'auto' }
+        ]
+      },
+      {
+        key: '*|fan.set_percentage', options: [
+          { label: 'percentage (0–100)', value: 'percentage', default: 50 }
+        ]
+      },
+      {
+        key: '*|fan.increase_speed', options: [
+          { label: 'percentage_step (0–100)', value: 'percentage_step', default: 10 }
+        ]
+      },
+      {
+        key: '*|fan.decrease_speed', options: [
+          { label: 'percentage_step (0–100)', value: 'percentage_step', default: 10 }
+        ]
+      },
+      {
+        key: '*|fan.oscillate', options: [
+          { label: 'oscillating (true/false)', value: 'oscillating', default: true }
+        ]
+      },
+      {
+        key: '*|fan.set_direction', options: [
+          { label: 'direction (forward/reverse)', value: 'direction', default: 'forward' }
+        ]
+      },
+      {
+        key: '*|cover.set_cover_position', options: [
+          { label: 'position (0–100)', value: 'position', default: 50 }
+        ]
+      },
+      {
+        key: '*|media_player.volume_set', options: [
+          { label: 'volume_level (0–1)', value: 'volume_level', default: 0.5 }
+        ]
+      },
+      {
+        key: '*|media_player.media_seek', options: [
+          { label: 'seek_position (seconds)', value: 'seek_position', default: 0 }
+        ]
+      },
+      {
+        key: '*|climate.set_temperature', options: [
+          { label: 'temperature (°C)', value: 'temperature', default: 21 },
+          { label: 'target_temp_low (°C)', value: 'target_temp_low', default: 19 },
+          { label: 'target_temp_high (°C)', value: 'target_temp_high', default: 23 }
+        ]
+      },
+      {
+        key: '*|climate.set_hvac_mode', options: [
+          { label: 'hvac_mode (heat/cool/auto/off)', value: 'hvac_mode', default: 'auto' }
+        ]
+      },
+      {
+        key: '*|climate.set_fan_mode', options: [
+          { label: 'fan_mode (string)', value: 'fan_mode', default: 'auto' }
+        ]
+      },
+      {
+        key: '*|script.turn_on', options: [
+          { label: 'variables (object)', value: 'variables', default: {} }
+        ]
+      },
+      {
+        key: '*|scene.turn_on', options: [
+          { label: 'transition (seconds)', value: 'transition', default: 1 }
+        ]
+      }
+    ];
 
-    const keyTemplates = {
-      'light.turn_on': [
-        { label: '(clear)', value: '{}' },
-        { label: 'brightness (0-255)', value: 'brightness', default: 128 },
-        { label: 'brightness_pct (0-100)', value: 'brightness_pct', default: 50 },
-        { label: 'rgb_color [R,G,B]', value: 'rgb_color', default: [255, 255, 255] },
-        { label: 'color_temp (153-500)', value: 'color_temp', default: 300 },
-        { label: 'transition (seconds)', value: 'transition', default: 1 },
-      ],
-      'light.toggle': [
-        { label: '(clear)', value: '{}' },
-        { label: 'brightness (0-255)', value: 'brightness', default: 128 },
-        { label: 'brightness_pct (0-100)', value: 'brightness_pct', default: 50 },
-        { label: 'rgb_color [R,G,B]', value: 'rgb_color', default: [255, 255, 255] },
-        { label: 'color_temp (153-500)', value: 'color_temp', default: 300 },
-        { label: 'transition (seconds)', value: 'transition', default: 1 },
-      ],
-      'cover.set_cover_position': [
-        { label: '(clear)', value: '{}' },
-        { label: 'position (0-100)', value: 'position', default: 50 },
-      ],
-      'media_player.volume_set': [
-        { label: '(clear)', value: '{}' },
-        { label: 'volume_level (0-1)', value: 'volume_level', default: 0.5 },
-      ],
-    };
-
-    // Merge custom keys from config
-    let merged = keyTemplates[service] ? [...keyTemplates[service]] : [{ label: '(clear)', value: '{}' }];
-    if (CUSTOM_COMMON_SERVICE_DATA_KEYS[service]) {
-      // Append custom keys (or you could merge/override as needed)
-      merged = merged.concat(CUSTOM_COMMON_SERVICE_DATA_KEYS[service]);
+    // Add custom keys from config (entity|service specific)
+    if (CUSTOM_COMMON_SERVICE_DATA_KEYS && typeof CUSTOM_COMMON_SERVICE_DATA_KEYS === 'object') {
+      for (const customKey in CUSTOM_COMMON_SERVICE_DATA_KEYS) {
+        if (Object.prototype.hasOwnProperty.call(CUSTOM_COMMON_SERVICE_DATA_KEYS, customKey)) {
+          keyTemplates.push({
+            key: customKey, // e.g. "entity_id|service"
+            options: CUSTOM_COMMON_SERVICE_DATA_KEYS[customKey]
+          });
+        }
+      }
     }
-    return merged;
+    return keyTemplates;
+  }
+
+  _getCommonServiceDataKeys() {
+    const entity = this._working?.entity || this.draft?.entity || '';
+    const service = this._working?.service || this.draft?.service || '';
+    if (!service) return [];
+    const searchKey = `${entity}|${service}`;
+    // Helper: wildcard pattern to regex
+    function wildcardToRegex(pattern) {
+      return new RegExp('^' + pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$');
+    }
+    // Find all matching templates (most generic to most specific)
+    const matches = this._mergedServiceDataKeys.filter(t => wildcardToRegex(t.key).test(searchKey));
+    // Merge all options, most generic first
+    let options = [];
+    for (const match of matches) {
+      options = options.concat(match.options);
+    }
+    // Always add clear option if not present
+    if (!options.some(o => o.value === '{}')) {
+      options.unshift({ label: '(clear)', value: '{}' });
+    }
+    return options;
+  }
+
+  // Helper to get prefill by entity|service with wildcard support
+  _getPrefillServiceData(entity, service) {
+    const searchKey = `${entity}|${service}`;
+    function wildcardToRegex(pattern) {
+      return new RegExp('^' + pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$');
+    }
+    // If PREFILL_SERVICE_DATA is an object, use wildcard matching for keys
+    if (PREFILL_SERVICE_DATA && typeof PREFILL_SERVICE_DATA === 'object' && !Array.isArray(PREFILL_SERVICE_DATA)) {
+      const keys = Object.keys(PREFILL_SERVICE_DATA);
+      const matches = keys.filter(k => wildcardToRegex(k).test(searchKey));
+      if (matches.length === 0) return undefined;
+      return PREFILL_SERVICE_DATA[matches[matches.length - 1]];
+    }
+    // If it's an array (legacy), use direct lookup
+    if (Array.isArray(PREFILL_SERVICE_DATA)) {
+      for (const t of PREFILL_SERVICE_DATA) {
+        const regex = wildcardToRegex(t.key);
+        logger.info(`[Prefill Debug] Pattern: ${t.key}, Regex: ${regex}, SearchKey: ${searchKey}, Match: ${regex.test(searchKey)}`);
+      }
+      const matches = PREFILL_SERVICE_DATA.filter(t => wildcardToRegex(t.key).test(searchKey));
+      logger.info(`[Prefill Debug] Matches found: ${matches.length}`);
+      if (matches.length === 0) return undefined;
+      return matches[matches.length - 1].value;
+    }
+    // Fallback: direct lookup
+    logger.info(`[Prefill Debug] Direct lookup for key: ${searchKey}, Found: ${PREFILL_SERVICE_DATA[searchKey]}`);
+    return PREFILL_SERVICE_DATA[searchKey];
   }
 
   _clearServiceDataValidation() {
@@ -241,29 +374,22 @@ export class RF433Editor extends LitElement {
         return;
       }
     }
-
-    // Prefill service_data for specific entity/service combinations, but only if blank
-    if ((field === 'entity' || field === 'service')) {
-      const entity = field === 'entity' ? value : this._working?.entity;
-      const service = field === 'service' ? value : this._working?.service;
-      const key = entity && service ? `${entity}|${service}` : null;
-      const currentServiceData = this._working?.service_data;
-      const isBlank =
-        currentServiceData == null ||
-        (typeof currentServiceData === 'object' && Object.keys(currentServiceData).length === 0);
-      if (key && PREFILL_SERVICE_DATA[key] && isBlank) {
-        try {
-          const prefill = JSON.parse(PREFILL_SERVICE_DATA[key]);
-          this._working['service_data'] = prefill;
-          this.dispatchEvent(new CustomEvent("draft-changed", {
-            detail: { field: 'service_data', value: prefill },
-            bubbles: true,
-            composed: true
-          }));
-        } catch (e) {
-          logger.error('Failed to parse PREFILL_SERVICE_DATA for', key, e);
-        }
-      }
+    // If service changes, clear service_data
+    if (field === 'service') {
+      this._working = { ...this._working, service: value, service_data: {} };
+      this.dispatchEvent(new CustomEvent("draft-changed", {
+        detail: { field: 'service', value },
+        bubbles: true,
+        composed: true
+      }));
+      this.dispatchEvent(new CustomEvent("draft-changed", {
+        detail: { field: 'service_data', value: {} },
+        bubbles: true,
+        composed: true
+      }));
+      this.requestUpdate();
+      setTimeout(() => this._clearServiceDataValidation(), 0);
+      return;
     }
 
     this._working[field] = value;
@@ -332,7 +458,7 @@ export class RF433Editor extends LitElement {
   // Helper Methods
   // ========================================
 
-   // Smart insert entity id into JSON string
+  // Smart insert entity id into JSON string
   _smartInsertEntityId(value, selectionStart, selectionEnd, entityId) {
     // Robuste Ersetzung: Wenn Cursor innerhalb eines Strings oder direkt vor dem schließenden " steht
     if (selectionStart === selectionEnd) {
@@ -487,34 +613,34 @@ export class RF433Editor extends LitElement {
                   .value=${""}
                   .required=${false}
                   .selector=${{
-            select: {
-              options: (() => {
-                const allowed = ["script.turn_on"];
-                const currentService = this._working?.service;
-                if (allowed.includes(currentService)) {
-                  return ["Select entity", ...this._getCommonServiceDataKeys().map(k => k.label)];
-                }
-                return this._getCommonServiceDataKeys().map(k => k.label);
-              })(),
-              custom_value: false,
-              mode: "dropdown"
-            }
-          }}
+          select: {
+            options: (() => {
+              const allowed = ["script.turn_on"];
+              const currentService = this._working?.service;
+              if (allowed.includes(currentService)) {
+                return ["Select entity", ...this._getCommonServiceDataKeys().map(k => k.label)];
+              }
+              return this._getCommonServiceDataKeys().map(k => k.label);
+            })(),
+            custom_value: false,
+            mode: "dropdown"
+          }
+        }}
                   ?disabled=${this.disabled}
                   @value-changed=${e => {
-            const label = e.detail.value;
-            if (label === "Select entity") {
-              this._showEntitySelector = true;
-            } else {
-              const template = this._getCommonServiceDataKeys().find(k => k.label === label);
-              if (template && template.value) {
-                this._addServiceDataKey(template.value);
-              }
+          const label = e.detail.value;
+          if (label === "Select entity") {
+            this._showEntitySelector = true;
+          } else {
+            const template = this._getCommonServiceDataKeys().find(k => k.label === label);
+            if (template && template.value) {
+              this._addServiceDataKey(template.value);
             }
-            // Hide the selector, then show it again after a tick to force remount
-            this._showCommonParamSelector = false;
-            setTimeout(() => { this._showCommonParamSelector = true; }, 0);
-          }}
+          }
+          // Hide the selector, then show it again after a tick to force remount
+          this._showCommonParamSelector = false;
+          setTimeout(() => { this._showCommonParamSelector = true; }, 0);
+        }}
                 ></ha-selector>
                 ${this._showEntitySelector ? html`
                   <div style="position: relative; margin-top: 8px; width: 100%;">
@@ -525,41 +651,41 @@ export class RF433Editor extends LitElement {
                       .required=${true}
                       style="width: 100%;"
                       .selector=${{
-                        entity: { domain: this._entityDomainList }
-                      }}
+            entity: { domain: this._entityDomainList }
+          }}
                       @value-changed=${e => {
-                        const selected = e.detail.value;
-                        if (selected) {
-                          // Insert selected entity_id at cursor position in the service data text field
-                          const textField = this.shadowRoot?.querySelector('ha-textfield[label="Service data (JSON, optional)"]');
-                          // Try to get the native input/textarea inside ha-textfield
-                          const nativeInput = textField && (textField.inputElement || textField._inputElement || textField.renderRoot?.querySelector('textarea, input'));
-                          if (nativeInput) {
-                            const start = nativeInput.selectionStart || 0;
-                            const end = nativeInput.selectionEnd || 0;
-                            const value = nativeInput.value || '';
-                            const { newValue, newCursor } = this._smartInsertEntityId(value, start, end, selected);
-                            nativeInput.value = newValue;
-                            nativeInput.selectionStart = nativeInput.selectionEnd = newCursor;
-                            nativeInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-                            nativeInput.focus();
-                          }
-                          // Ensure the selector closes after insertion
-                          setTimeout(() => { this._showEntitySelector = false; }, 0);
-                        } else {
-                          this._showEntitySelector = false;
-                        }
-                      }}
+            const selected = e.detail.value;
+            if (selected) {
+              // Insert selected entity_id at cursor position in the service data text field
+              const textField = this.shadowRoot?.querySelector('ha-textfield[label="Service data (JSON, optional)"]');
+              // Try to get the native input/textarea inside ha-textfield
+              const nativeInput = textField && (textField.inputElement || textField._inputElement || textField.renderRoot?.querySelector('textarea, input'));
+              if (nativeInput) {
+                const start = nativeInput.selectionStart || 0;
+                const end = nativeInput.selectionEnd || 0;
+                const value = nativeInput.value || '';
+                const { newValue, newCursor } = this._smartInsertEntityId(value, start, end, selected);
+                nativeInput.value = newValue;
+                nativeInput.selectionStart = nativeInput.selectionEnd = newCursor;
+                nativeInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+                nativeInput.focus();
+              }
+              // Ensure the selector closes after insertion
+              setTimeout(() => { this._showEntitySelector = false; }, 0);
+            } else {
+              this._showEntitySelector = false;
+            }
+          }}
                     ></ha-selector>
                     <button
                       @click=${() => {
-                        this._showEntitySelector = false;
-                        // Reset the add common parameter dropdown so 'Select entity' can be chosen again
-                        setTimeout(() => {
-                          const selector = this.shadowRoot?.querySelector('ha-selector[label="Add common parameter"]');
-                          if (selector) selector.value = '';
-                        }, 100);
-                      }}
+            this._showEntitySelector = false;
+            // Reset the add common parameter dropdown so 'Select entity' can be chosen again
+            setTimeout(() => {
+              const selector = this.shadowRoot?.querySelector('ha-selector[label="Add common parameter"]');
+              if (selector) selector.value = '';
+            }, 100);
+          }}
                       style="position: absolute; top: 4px; right: 4px; background: #fff; border: none; border-radius: 50%; width: 24px; height: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); cursor: pointer; font-size: 16px; line-height: 24px; padding: 0; z-index: 10;"
                       title="Close"
                     >&#10005;</button>

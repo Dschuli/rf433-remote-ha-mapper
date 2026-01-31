@@ -78,6 +78,14 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     };
     this.addEventListener('learning-mode-changed', this._learningModeObserver);
 
+    this._onBeforeUnload = () => {
+      if (CONFIG.AUTO_UNBLOCK) {
+        this._blockEvents(true); // Unblock events on leaving the card
+        logger.debug("RF433LearningCard: unblocking");
+      }
+    };
+    window.addEventListener('beforeunload', this._onBeforeUnload);
+
     // Listen for tab visibility changes
     this._onVisibilityChange = () => {
       if (!document.hidden) {
@@ -114,11 +122,18 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     if (this._unhandledRejectionHandler) {
       window.removeEventListener('unhandledrejection', this._unhandledRejectionHandler);
     }
+    if (this._unhandledRejectionHandler) {
+      window.removeEventListener('unhandledrejection', this._unhandledRejectionHandler);
+    }
     if (this._learningModeObserver) {
       this.removeEventListener('learning-mode-changed', this._learningModeObserver);
     }
     if (this._onVisibilityChange) {
       document.removeEventListener('visibilitychange', this._onVisibilityChange);
+    }
+    if (CONFIG.AUTO_UNBLOCK) {
+      this._blockEvents(true); // Unblock events on leaving the card
+      logger.debug("RF433LearningCard: unblocking");
     }
   }
 
@@ -134,7 +149,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     if (this._lastTs <= this._lastHandledEventTs) return; // Old event
 
     // FIRST valid new RF event → start edit mode
-    this._start_EditMode(this._lastProto, this._lastCode);
+    this._start_EditMode(this._lastProto, this._lastCode, this._lastPressed);
   }
 
   /* =========================================================
@@ -155,9 +170,10 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
           const data = JSON.parse(storeState);
           this._lastProto = data.proto;
           this._lastCode = data.code;
+          this._lastPressed = data.pressed || "";
           this._lastTs = new Date(data.ts).getTime();
           this._hasValidLastData = this._lastProto != null && this._lastCode != null && this._lastTs != null;
-          logger.debug("RF433LearningCard: last RF event =", this._lastProto, this._lastCode, this._lastTs);
+          logger.debug("RF433LearningCard: last RF event =", this._lastProto, this._lastCode, this._lastPressed, this._lastTs);
         } catch (e) {
           logger.error("RF433LearningCard: Failed to parse RF event store data", e);
           this._resetLastEventData();
@@ -170,6 +186,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     this._hasValidLastData = false;
     this._lastProto = null;
     this._lastCode = null;
+    this._lastPressed = null;
     this._lastTs = null;
   }
 
@@ -342,13 +359,20 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     const result = [];
     const seen = new Set();
 
+    // Remove temp field from newMap entries
+    const cleanedNewMap = newMap.map(entry => {
+      const cleaned = { ...entry };
+      if (cleaned.temp) delete cleaned.temp;
+      return cleaned;
+    });
+
     // pass 1: walk old map, replace with new if present
     for (let i = 0; i < oldMap.length; i++) {
       const oldEntry = oldMap[i];
       const oldKey = oldEntry.proto + ":" + oldEntry.code;
       let replaced = false;
-      for (let j = 0; j < newMap.length; j++) {
-        const newEntry = newMap[j];
+      for (let j = 0; j < cleanedNewMap.length; j++) {
+        const newEntry = cleanedNewMap[j];
         const newKey = newEntry.proto + ":" + newEntry.code;
         if (newKey === oldKey) {
           result.push(structuredClone(newEntry));
@@ -362,8 +386,8 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
       }
     }
     // pass 2: append entries that are only in newMap
-    for (let j = 0; j < newMap.length; j++) {
-      const newEntry = newMap[j];
+    for (let j = 0; j < cleanedNewMap.length; j++) {
+      const newEntry = cleanedNewMap[j];
       const newKey = newEntry.proto + ":" + newEntry.code;
       if (!seen.has(newKey)) {
         result.push(structuredClone(newEntry));
@@ -417,7 +441,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
   }
 
   // Enter edit mode for current last event
-  _start_EditMode(proto, code) {
+  _start_EditMode(proto, code, pressed) {
     logger.info("RF433LearningCard: starting editor for ", proto, code);
     this._lockedPcc = { proto: proto, code: code };
     this._editorStartedAt = Date.now();
@@ -426,6 +450,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     if (!stateObj) return;
     const map = Array.isArray(stateObj.attributes?.map) ? stateObj.attributes.map : [];
     const existing = this.findMapping(map, proto, code);
+
     this._original = structuredClone(existing ?? {
       ...this._lockedPcc,
       active: true,
@@ -435,7 +460,8 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
       remote: "",
       type: "",
       channel: "",
-      button: ""
+      button: "",
+      temp: { pressed }
     });
 
     this._draft = structuredClone(this._original);
@@ -449,11 +475,11 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
   /* =========================================================
    * Event Handlers (User Actions)
    * ========================================================= */
-  async _blockEvents() {
+  async _blockEvents(forceOff = false) {
     if (!this.hass || !this._blockSeconds || this._blockSeconds <= 0) return;
     const blocked = this.hass.states[CONFIG.BLOCKING_HELPER]?.state === "on";
     try {
-      if (blocked) {
+      if (blocked || forceOff) {
         logger.info("RF433LearningCard: Allowing RF events");
         await this.hass.callService("script", "temporary_toggle", {
           toggle: CONFIG.BLOCKING_HELPER,
@@ -747,7 +773,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
           </div>
           <div class="flex_align" style="background: var(--secondary-background-color); padding: 8px; border-radius: var(--rf-border-radius);">
             <ha-button class=${blocked ? "danger" : ""}
-              @click=${this._blockEvents}
+              @click=${() => this._blockEvents(false)}
               title=${blocked ? "Terminate event blocking" : "Temporarily block RF433 automation from acting on incoming events"}>
               ${blocked ? "Allow events" : "Block events"}
             </ha-button>

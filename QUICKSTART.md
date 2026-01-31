@@ -76,17 +76,16 @@ Copy files:
 cp homeassistant/mqtt_sensors.yaml /config/
 cp homeassistant/scripts.yaml /config/
 cp homeassistant/automations.yaml /config/
-cp homeassistant/scripts/write_json_file.sh /config/scripts/
-chmod +x /config/scripts/write_json_file.sh
 cp -r homeassistant/www/* /config/www/
 ```
 
-**Alternative**: If you prefer using the UI automation editor, see the detailed instructions in [README.md](README.md#22-automations).
+**Note:** The automation for RF433 and Zigbee button handling is now unified. Only one automation is needed—see `homeassistant/automations.yaml`.
+
+**Alternative**: If you prefer using the UI automation editor, see the updated instructions in [README.md](README.md#22-automations).
 
 Restart Home Assistant.
 
 **Note:** To ensure reliable operation with fast remotes, a 500ms delay is automatically added after any toggle action in the automation. This prevents rapid repeated toggles from being processed too quickly.
-
 ### 4. Create Helper Entities (2 minutes)
 
 In Home Assistant:

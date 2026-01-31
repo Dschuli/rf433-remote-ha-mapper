@@ -1,10 +1,11 @@
 # ===============================================================
-# RF433 Automations for Home Assistant
+# RF433 + Zigbee Automations for Home Assistant
 # ===============================================================
-# Method A: Add to configuration.yaml as: automation: !include automations.yaml
+# Method A: Add to configuration.yaml as: automation: !include automations.yaml or 
+#           add to your existing automations.yaml
 # Method B: Copy to UI automation editor (Settings → Automations)
-#           IMPORTANT: When using UI editor, remove lines 15-16 (- id: and dash before alias:)
-#           Start copying from 'alias: RF433MHz event handling' onwards
+#           IMPORTANT: When using UI editor, remove line 17
+#           Start copying from 'alias: RF433 + Zigbee Button Handler' onwards
 #
 # Required helper entities (create in Settings > Devices & Services > Helpers):
 # - input_text.rf433_last_event_store (Text input helper)
@@ -13,25 +14,20 @@
 # Required scripts:
 # - script.temporary_toggle (see scripts.yaml)
 # ===============================================================
-
-- id: rf433_event_handling
-  alias: RF433MHz event handling
-  description: Processes 433MHz RF events from ESPHome sniffer and executes mapped actions
-  # NOTE: The sensor name 'sensor.rf433_runtime_map' must match RUNTIME_MAPPING_SENSOR in rf433-config.js
+- id: rf433_zigbee_event_handling
+  alias: RF433 + Zigbee Remotes Button Handler
+  description: >-
+    Handles RF433 and Zigbee events - storing event data in last input_text.rf433_last_event_store & executing mapped action
   triggers:
     - event_type: esphome.rf433
       trigger: event
-  variables:
-    proto: "{{ trigger.event.data.protocol | int }}"
-    code: "{{ trigger.event.data.code | int }}"
-    rf_map: "{{ state_attr('sensor.rf433_runtime_map', 'map') }}"
+    - event_type: zha_event
+      trigger: event
   actions:
     - choose:
-        # Error case: RF map sensor missing or empty
         - conditions:
             - condition: template
-              value_template: |
-                {{ rf_map is none or rf_map | count == 0 }}
+              value_template: "{{ rf_map is none or rf_map | count == 0 }}"
           sequence:
             - data:
                 level: error
@@ -39,50 +35,38 @@
                 message: |
                   RF map sensor missing or empty! sensor=sensor.rf433_runtime_map
               action: system_log.write
-
-        # Normal case: RF map exists and has entries
         - conditions:
             - condition: template
-              value_template: |
-                {{ rf_map | count > 0 }}
+              value_template: "{{ rf_map | count > 0 }}"
           sequence:
-            # Find matching entry in RF map
             - variables:
                 entry: |
                   {% set match = rf_map
-                     | selectattr('proto', 'equalto', proto | string)
-                     | selectattr('code', 'equalto', code | string)
-                     | list %}
+                    | selectattr('proto', 'equalto', proto | string)
+                    | selectattr('code', 'equalto', code | string)
+                    | list %}
                   {{ match[0] if match | length > 0 else none }}
-
-            # Store last event for learning mode
             - target:
                 entity_id: input_text.rf433_last_event_store
               data:
-                value: |
+                value: >
                   {{ {
-                    "proto": trigger.event.data.protocol | string,
-                    "code":  trigger.event.data.code  | string,
+                    "proto": proto | string,
+                    "code":  code | string,
+                    "pressed": pressed | string,
                     "ts":    now().isoformat()
                   } | tojson }}
               action: input_text.set_value
-
-            # Execute action if not blocked and entry is active
             - choose:
-                # Events are blocked, do nothing
                 - conditions:
                     - condition: state
                       entity_id: input_boolean.rf433_block_events
                       state: "on"
                   sequence: []
-
-                # Entry found and active - execute the mapped action
                 - conditions:
                     - condition: template
-                      value_template: |
-                        {{ entry is not none and entry.active is true }}
+                      value_template: "{{ entry is not none and entry.active is true }}"
                   sequence:
-                    # Special handling for script services
                     - choose:
                         - conditions:
                             - condition: template
@@ -97,69 +81,69 @@
                                 {% else %}
                                   {{ {'variables': sdata} }}
                                 {% endif %}
-                              action: "{{ entry.service }}"
                               continue_on_error: true
-                      # Default: normal service call
+                              action: "{{ entry.service }}"
                       default:
                         - target:
                             entity_id: "{{ entry.entity }}"
                           data: "{{ entry.service_data | default({}) }}"
-                          action: "{{ entry.service }}"
                           continue_on_error: true
-                        # Add delay after toggle actions to prevent rapid state changes
+                          action: "{{ entry.service }}"
                         - choose:
                             - conditions:
                                 - condition: template
-                                  value_template: "{{ entry.service in ['toggle', 'homeassistant.toggle'] or entry.service.endswith('.toggle') }}"
+                                  value_template: >-
+                                    {{ entry.service in ['toggle',
+                                    'homeassistant.toggle'] or
+                                    entry.service.endswith('.toggle') }}
                               sequence:
                                 - delay:
                                     milliseconds: 500
       default: []
   mode: single
-
-# --- Zigbee Remote to RF433 Automation ---
-# This automation listens for Zigbee remote events (from ZHA),
-# extracts the device and button press type, and generates a corresponding
-# RF433 code to be sent via ESPHome. This to use the rf433-editor mapping features to define actions for Zigbee remotes.
-# The RF433 code is calculated as:
-# RF protocol: 10
-# Remote ID: last 6 hex digits of IEEE address converted to decimal
-# Endpoint ID: endpoint where the event originated (button pressed)
-# RF Code: (Remote ID * 1000) + (Endpoint ID * 100) + Press ID (= 1 for short press, 2 for double press, 3 for long press)
-#
-- id: zigbee_remote_to_rf433_auto_code
-  alias: Zigbee Remote → RF433 Auto Code
-  mode: single
-
-  trigger:
-    - platform: event
-      event_type: zha_event
-
   variables:
-    ieee: "{{ trigger.event.data.device_ieee }}"
-    ep: "{{ trigger.event.data.endpoint_id }}"
-    cmd: "{{ trigger.event.data.command }}"
-
-    remote_id: "{{ ieee.replace(':','')[-6:] | int(base=16) }}"
-
-    press_id: >
-      {% if cmd == "remote_button_short_press" %} 1
-      {% elif cmd == "remote_button_double_press" %} 2
-      {% elif cmd == "remote_button_long_press" %} 3
-      {% else %} 0
+    event_type: "{{ trigger.event.event_type }}"
+    proto: >
+      {% if trigger.event.event_type == 'esphome.rf433' %}
+        {{ trigger.event.data.protocol | int }}
+      {% elif trigger.event.event_type == 'zha_event' %}
+        Z1
+      {% else %}
+        XX
       {% endif %}
-
-    rf_code: >
-      {{ remote_id * 1000 + ep * 100 + press_id }}
-
-  action:
-    - condition: template
-      value_template: "{{ press_id != 0 }}"
-
-    - event: esphome.rf433
-      event_data:
-        protocol: 10
-        code: "{{ rf_code }}"
-        remote_id: "{{ remote_id }}"
-        button: "{{ button }}"
-        press: "{{ cmd }}"
+    code: >
+      {% if event_type == 'esphome.rf433' %}
+        {{ trigger.event.data.code | int }}
+      {% elif  trigger.event.event_type == 'zha_event' %}
+        {{ (
+          trigger.event.data.device_ieee.replace(':','')[-6:] | int(base=16)
+          ) * 1000 +
+          (trigger.event.data.endpoint_id | int) * 100 +
+          (
+            1 if trigger.event.data.command == 'remote_button_short_press' else
+            2 if trigger.event.data.command == 'remote_button_double_press' else
+            3 if trigger.event.data.command == 'remote_button_long_press' else
+            0
+          )
+        }}
+      {% else %}
+        '0'
+      {% endif %}
+    pressed: >
+      {% if trigger.event.event_type == 'esphome.rf433' %}
+        ""
+      {% elif trigger.event.event_type == 'zha_event' %}
+        {{ trigger.event.data.endpoint_id }}-
+        {%- if trigger.event.data.command == 'remote_button_short_press' -%}
+          press
+        {%- elif trigger.event.data.command == 'remote_button_double_press' -%}
+          dblPress
+        {%- elif trigger.event.data.command == 'remote_button_long_press' -%}
+          longPress
+        {%- else -%}
+          ??
+        {%- endif %}
+      {% else %}
+        unknown
+      {% endif %}
+    rf_map: "{{ state_attr('sensor.rf433_runtime_map', 'map') }}"
