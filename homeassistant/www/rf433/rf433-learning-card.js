@@ -52,6 +52,9 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     this._undoDisabled = false;
 
     this._resetLastEventData();
+    this._blockCounter = 0;
+    this._blockCounterInterval = null;
+    this._savedBlockTime = null;
   }
 
   setConfig(config) {
@@ -63,40 +66,43 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
    * ========================================================= */
   async connectedCallback() {
     super.connectedCallback();
+    logger.debug("RF433LearningCard: connectedCallback called");
     this.setLastEventData();
     this._setSessionBackupHint();
+
+    // Restore remaining block time from localStorage and re-block if needed
+    if (CONFIG.AUTO_UNBLOCK && this.hass) {
+      try {
+        const savedBlock = localStorage.getItem('rf433_block_time');
+        logger.debug("RF433LearningCard: Restoring block time from localStorage:", savedBlock);
+        if (savedBlock) {
+          const seconds = parseInt(savedBlock, 10);
+          if (seconds > 0) {
+            this.blockEvents(seconds);
+            logger.debug(`RF433LearningCard: Restored and re-blocked for ${seconds} seconds from localStorage`);
+          }
+          // Remove after restoring to avoid repeated re-blocking
+          localStorage.removeItem('rf433_block_time');
+        }
+      } catch (e) {
+        logger.warn("RF433LearningCard: Failed to restore block time from localStorage", e);
+      }
+    }
 
     // Restore learning mode from localStorage if available
     const savedLearning = localStorage.getItem('rf433_learning_mode');
     if (savedLearning !== null) {
       this._learningMode = savedLearning === 'true';
+      logger.debug("RF433LearningCard: Restored learning mode from localStorage:", this._learningMode);
     }
-
-    // Save learning mode to localStorage on change
-    this._learningModeObserver = () => {
-      localStorage.setItem('rf433_learning_mode', this._learningMode ? 'true' : 'false');
-    };
-    this.addEventListener('learning-mode-changed', this._learningModeObserver);
 
     this._onBeforeUnload = () => {
       if (CONFIG.AUTO_UNBLOCK) {
-        this._blockEvents(true); // Unblock events on leaving the card
-        logger.debug("RF433LearningCard: unblocking");
+        this.unBlockEvents(); // Unblock events on leaving the card
+        logger.debug("RF433LearningCard: unblocking due to page unload");
       }
     };
     window.addEventListener('beforeunload', this._onBeforeUnload);
-
-    // Listen for tab visibility changes
-    this._onVisibilityChange = () => {
-      if (!document.hidden) {
-        // Tab wurde reaktiviert: Learning-Status aus localStorage wiederherstellen
-        const saved = localStorage.getItem('rf433_learning_mode');
-        if (saved !== null) {
-          this._learningMode = saved === 'true';
-        }
-      }
-    };
-    document.addEventListener('visibilitychange', this._onVisibilityChange);
 
     // Suppress translation loading errors from HA's internal translation system
     // These occur because HA tries to load translations for custom cards but they don't exist
@@ -119,25 +125,51 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    logger.debug("RF433LearningCard: disconnectedCallback called");
     if (this._unhandledRejectionHandler) {
       window.removeEventListener('unhandledrejection', this._unhandledRejectionHandler);
     }
-    if (this._unhandledRejectionHandler) {
-      window.removeEventListener('unhandledrejection', this._unhandledRejectionHandler);
+    // Save learning mode state before disconnect
+    try {
+      localStorage.setItem('rf433_learning_mode', this._learningMode ? 'true' : 'false');
+      logger.debug("RF433LearningCard: Saved learning mode to localStorage:", this._learningMode);
+    } catch (e) {
+      logger.warn("RF433LearningCard: Failed to save learning mode to localStorage", e);
     }
-    if (this._learningModeObserver) {
-      this.removeEventListener('learning-mode-changed', this._learningModeObserver);
-    }
-    if (this._onVisibilityChange) {
-      document.removeEventListener('visibilitychange', this._onVisibilityChange);
-    }
+
     if (CONFIG.AUTO_UNBLOCK) {
-      this._blockEvents(true); // Unblock events on leaving the card
-      logger.debug("RF433LearningCard: unblocking");
+      // Save remaining block time to localStorage if blocking is active
+      if (this.hass && this.hass.states[CONFIG.BLOCKING_HELPER]?.state === "on") {
+        try {
+          localStorage.setItem('rf433_block_time', String(this._blockCounter));
+        } catch (e) {
+          logger.warn("RF433LearningCard: Failed to save block time to localStorage", e);
+        }
+      } else {
+        try {
+          localStorage.removeItem('rf433_block_time');
+        } catch (e) { }
+      }
+      this.unBlockEvents(); // Unblock events on leaving the card
+      logger.debug("RF433LearningCard: unblocking due to disconnect");
+    }
+    if (this._blockCounterInterval) {
+      clearInterval(this._blockCounterInterval);
+      this._blockCounterInterval = null;
     }
   }
 
   updated(changedProps) {
+    // Save learning mode to localStorage whenever it changes
+    if (changedProps.has("_learningMode")) {
+      try {
+        localStorage.setItem('rf433_learning_mode', this._learningMode ? 'true' : 'false');
+        logger.debug("RF433LearningCard: Learning mode changed, saved to localStorage:", this._learningMode);
+      } catch (e) {
+        logger.warn("RF433LearningCard: Failed to save learning mode to localStorage", e);
+      }
+    }
+
     // Only react to Home Assistant state changes
     if (!changedProps.has("hass")) return;
 
@@ -475,29 +507,54 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
   /* =========================================================
    * Event Handlers (User Actions)
    * ========================================================= */
-  async _blockEvents(forceOff = false) {
-    if (!this.hass || !this._blockSeconds || this._blockSeconds <= 0) return;
-    const blocked = this.hass.states[CONFIG.BLOCKING_HELPER]?.state === "on";
-    try {
-      if (blocked || forceOff) {
-        logger.info("RF433LearningCard: Allowing RF events");
-        await this.hass.callService("script", "temporary_toggle", {
-          toggle: CONFIG.BLOCKING_HELPER,
-          status: "off",
-          seconds: 0
-        });
+  async blockEvents(seconds) {
+    logger.debug("RF433LearningCard: blockEvents called with", seconds);
+    if (!this.hass || !seconds || seconds <= 0) return;
+    logger.info(`RF433LearningCard: Blocking RF events for ${seconds} seconds`);
+    // Start counter immediately
+    this._blockCounter = seconds;
+    if (this._blockCounterInterval) clearInterval(this._blockCounterInterval);
+    this._blockCounterInterval = setInterval(() => {
+      if (this._blockCounter > 0) {
+        this._blockCounter--;
+        this.requestUpdate();
       } else {
-        logger.info(`RF433LearningCard: Blocking RF events for ${this._blockSeconds} seconds`);
-        await this.hass.callService("script", "temporary_toggle", {
-          toggle: CONFIG.BLOCKING_HELPER,
-          seconds: this._blockSeconds,
-          status: "on"
-        });
+        clearInterval(this._blockCounterInterval);
+        this._blockCounterInterval = null;
+        this.requestUpdate();
       }
+    }, 1000);
+    this.requestUpdate();
+    try {
+      await this.hass.callService("script", "temporary_toggle", {
+        toggle: CONFIG.BLOCKING_HELPER,
+        seconds: seconds,
+        status: "on"
+      });
     } catch (err) {
-      logger.error("Failed to toggle event blocking:", err);
-      // Don't throw - this is a non-critical operation
+      logger.error("Failed to block events:", err);
     }
+  }
+
+  async unBlockEvents() {
+    logger.debug("RF433LearningCard: unBlockEvents called");
+    if (!this.hass) return;
+    try {
+      await this.hass.callService("script", "temporary_toggle", {
+        toggle: CONFIG.BLOCKING_HELPER,
+        status: "off",
+        seconds: 0
+      });
+    } catch (err) {
+      logger.error("Failed to unblock events:", err);
+    }
+    // Reset and stop counter
+    this._blockCounter = 0;
+    if (this._blockCounterInterval) {
+      clearInterval(this._blockCounterInterval);
+      this._blockCounterInterval = null;
+    }
+    this.requestUpdate();
   }
 
   async _onExportMap() {
@@ -773,9 +830,9 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
           </div>
           <div class="flex_align" style="background: var(--secondary-background-color); padding: 8px; border-radius: var(--rf-border-radius);">
             <ha-button class=${blocked ? "danger" : ""}
-              @click=${() => this._blockEvents(false)}
+              @click=${() => blocked ? this.unBlockEvents() : this.blockEvents(this._blockSeconds)}
               title=${blocked ? "Terminate event blocking" : "Temporarily block RF433 automation from acting on incoming events"}>
-              ${blocked ? "Allow events" : "Block events"}
+              ${blocked ? `Unblock - ${this._blockCounter} sec` : "Block events"}
             </ha-button>
             <ha-textfield
               label="seconds"
@@ -790,13 +847,15 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
             <ha-button
               @click=${this._onExportMap}
               title="Export current RF mapping to JSON file"
-              ?disabled=${this._learningMode || isEditing}>
+              ?disabled=${this._learningMode || isEditing}
+            >
               Export Map
             </ha-button>
             <ha-button
               @click=${this._onImportMap}
               title="Import RF mapping from JSON file"
-              ?disabled=${this._learningMode || isEditing}>
+              ?disabled=${this._learningMode || isEditing}
+            >
               Import Map
             </ha-button>
           </div>
