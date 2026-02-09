@@ -120,22 +120,12 @@ export class RF433Editor extends LitElement {
 
   updated(changedProps) {
     if (changedProps.has("draft")) {
-      logger.debug("RF433Editor: exiting?", this.existing);
-      // First assignment only
+      logger.debug("RF433Editor: draft changed, existing:", this.existing, "baseline exists:", !!this._baseline);
+      // Initialize baseline and working state only on first draft assignment
       if (!this._baseline) {
-        logger.debug("RF433Editor: initializing baseline");
+        logger.debug("RF433Editor: initializing baseline and working state from draft:", this.draft);
         this._baseline = structuredClone(this.draft);
         this._working = structuredClone(this.draft);
-        // Prefill button from temp.pressed if present and button is ""
-        if (
-          this._working &&
-          this._working.button === "" &&
-          this._working.temp &&
-          typeof this._working.temp.pressed === "string" &&
-          this._working.temp.pressed !== ""
-        ) {
-          this._working.button = this._working.temp.pressed;
-        }
       }
     }
 
@@ -716,7 +706,8 @@ export class RF433Editor extends LitElement {
             .selector=${{
         select: {
           options: this._getUniqueValues('remote').map(i => i.value),
-          custom_value: true
+          custom_value: true,
+          mode: "dropdown"
         }
       }}
             ?disabled=${this.disabled}
@@ -730,7 +721,8 @@ export class RF433Editor extends LitElement {
             .selector=${{
         select: {
           options: this._getUniqueValues('type').map(i => i.value),
-          custom_value: true
+          custom_value: true,
+          mode: "dropdown"
         }
       }}
             ?disabled=${this.disabled}
@@ -744,7 +736,8 @@ export class RF433Editor extends LitElement {
             .selector=${{
         select: {
           options: this._getUniqueValues('button').map(i => i.value),
-          custom_value: true
+          custom_value: true,
+          mode: "dropdown"
         }
       }}
             ?disabled=${this.disabled}
@@ -759,7 +752,8 @@ export class RF433Editor extends LitElement {
             .selector=${{
         select: {
           options: this._getUniqueValues('channel').map(i => i.value),
-          custom_value: true
+          custom_value: true,
+          mode: "dropdown"
         }
       }}
             ?disabled=${this.disabled}

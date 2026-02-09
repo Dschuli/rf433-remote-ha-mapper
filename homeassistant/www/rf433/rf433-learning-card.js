@@ -40,7 +40,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     this._blockSeconds = CONFIG.DEFAULT_BLOCK_SECONDS;
 
     this._undoLabel = "Undo last session";
-    this._undoHint = "Restores the RF mapping to the state before starting the last learning session.";
+    this._undoHint = "Restores the mapping to the state before starting the last learning session.";
     this._busyLabel = "Working…";
 
     this._lockedPcc = null;
@@ -273,10 +273,10 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     if (lastupdated) {
       if (this._compare_mapping_states(this._session_backup_sensor, this._runtime_mapping_sensor)) {
         this._undoDisabled = true;
-        this._undoHint = "RF mapping state matches the last session backup.";
+        this._undoHint = "Mapping state matches the last session backup.";
       } else {
         this._undoDisabled = false;
-        this._undoHint = "Restores the RF mapping to the state before starting the last learning session.\n" + "dated " +
+        this._undoHint = "Restores the RF/Zigbee mapping to the state before starting the last learning session.\n" + "dated " +
           formatDateTime(this.hass, new Date(lastupdated));
       }
     } else {
@@ -350,7 +350,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
 
     if (map.length === 0 || (doDelete && map.length === 1)) {
       logger.warn("RF433: current mapping is empty");
-      const ok = await confirm("Current RF mapping is empty.\n\nDo you want to skip backup of empty mapping?", { yes: "Proceed", no: "Cancel" });
+      const ok = await confirm("Current mapping is empty.\n\nDo you want to skip backup of empty mapping?", { yes: "Proceed", no: "Cancel" });
       this._setBusy(false);
       if (!ok) return true;
     }
@@ -459,7 +459,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
       // Setting undo to saved step undo, disable until the the first successful save of the session
       this._undoDisabled = true;
       this._undoLabel = "Undo last save";
-      this._undoHint = "No saved RF mapping changes yet in this learning session.";
+      this._undoHint = "No saved mapping changes yet in this learning session.";
       //this._undoHint = "Restores the RF mapping to the state before the last successful code save.";
 
       // Create session backup if needed
@@ -483,7 +483,8 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     const map = Array.isArray(stateObj.attributes?.map) ? stateObj.attributes.map : [];
     const existing = this.findMapping(map, proto, code);
 
-    this._original = structuredClone(existing ?? {
+    // Create base object with prefilled button from pressed value (for new entries)
+    const baseEntry = {
       ...this._lockedPcc,
       active: true,
       service: "",
@@ -492,10 +493,18 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
       remote: "",
       type: "",
       channel: "",
-      button: "",
+      button: pressed || "",  // Prefill button from pressed value
       temp: { pressed }
-    });
+    };
 
+    // Use existing entry, but prefill button from pressed if it's empty or missing
+    let originalEntry = structuredClone(existing ?? baseEntry);
+    if ((!originalEntry.button || originalEntry.button === "") && pressed) {
+      originalEntry.button = pressed;
+      originalEntry.temp = { pressed };
+    }
+
+    this._original = originalEntry;
     this._draft = structuredClone(this._original);
   }
 
@@ -560,7 +569,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
   async _onExportMap() {
     const { map } = this._get_mapping_data(this._runtime_mapping_sensor);
     if (!map || map.length === 0) {
-      await confirm("Current RF mapping is empty. Nothing to export.", { yes: "Ok", no: "" });
+      await confirm("Current RF/Zigbee mapping is empty. Nothing to export.", { yes: "Ok", no: "" });
       return;
     }
 
@@ -715,7 +724,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
         return;
       }
       const ok = await confirm("Are you sure you want to undo the last save operation?" +
-        "\nThis will restore the RF mapping to the state before the last save,\n" +
+        "\nThis will restore the RF/Zigbee mapping to the state before the last save,\n" +
         "dated " + formatDateTime(this.hass, new Date(lastupdated)), { yes: "Undo", no: "Cancel" })
       if (!ok) return;
       this._setBusy(true, "Undoing last save…");
@@ -726,7 +735,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
           this.hass.states[this._step_backup_sensor]?.attributes?.map || []
         );
         logger.info("RF433LearningCard: session undo completed");
-        await confirm("RF mapping before last save restored.", { yes: "Ok", no: "" });
+        await confirm("RF/Zigbee mapping before last save restored.", { yes: "Ok", no: "" });
 
         this._undoHint = "Last saving already undone.";
         this._undoDisabled = true;
@@ -747,7 +756,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
         return;
       }
       const ok = await confirm("Are you sure you want to undo the last learning session?" +
-        "\nThis will restore the RF mapping to the state before starting the last learning session,\n" +
+        "\nThis will restore the RF/Zigbee mapping to the state before starting the last learning session,\n" +
         "dated " + formatDateTime(this.hass, new Date(lastupdated)), { yes: "Undo", no: "Cancel" })
       if (!ok) return;
       this._setBusy(true, "Restoring session backup…");
@@ -758,7 +767,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
           this.hass.states[this._session_backup_sensor]?.attributes?.map || []
         );
         logger.info("RF433LearningCard: session undo completed");
-        await confirm("RF mapping restored to state before last learning session.", { yes: "Ok", no: "" });
+        await confirm("RF/Zigbee mapping restored to state before last learning session.", { yes: "Ok", no: "" });
         this._setSessionBackupHint();
       } catch (err) {
         logger.error("RF433LearningCard: failed to undo session", err);
@@ -781,9 +790,9 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
 
     if (!this._hasValidLastData) {
       return html`
-      <ha-card header="RF 433 Learning">
+      <ha-card header="RF 433/Zigbee Learning">
         <div class="content">
-          <p>Waiting for RF event sensor data.</p>
+          <p>Waiting for RF/Zigbee event sensor data.</p>
         </div>
       </ha-card>
       ${this.renderBusyOverlay()}
@@ -804,7 +813,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     const blocked = this.hass.states[CONFIG.BLOCKING_HELPER]?.state === "on";
 
     return html`
-    <ha-card header="RF 433 Learning">
+    <ha-card header="RF 433/Zigbee Learning">
       <div class="content">
 
         <!-- Learning toggle -->
@@ -831,7 +840,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
           <div class="flex_align" style="background: var(--secondary-background-color); padding: 8px; border-radius: var(--rf-border-radius);">
             <ha-button class=${blocked ? "danger" : ""}
               @click=${() => blocked ? this.unBlockEvents() : this.blockEvents(this._blockSeconds)}
-              title=${blocked ? "Terminate event blocking" : "Temporarily block RF433 automation from acting on incoming events"}>
+              title=${blocked ? "Terminate event blocking" : "Temporarily block RF433/Zigbee automation from acting on incoming events"}>
               ${blocked ? `Unblock - ${this._blockCounter} sec` : "Block events"}
             </ha-button>
             <ha-textfield
@@ -846,14 +855,14 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
           <div class="flex_align" style="background: var(--secondary-background-color); padding: 8px; border-radius: var(--rf-border-radius);">
             <ha-button
               @click=${this._onExportMap}
-              title="Export current RF mapping to JSON file"
+              title="Export current mapping to JSON file"
               ?disabled=${this._learningMode || isEditing}
             >
               Export Map
             </ha-button>
             <ha-button
               @click=${this._onImportMap}
-              title="Import RF mapping from JSON file"
+              title="Import Mapping from JSON file"
               ?disabled=${this._learningMode || isEditing}
             >
               Import Map
@@ -887,7 +896,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
 
           <hr />
 
-          <p><b>Last incoming RF event</b></p>
+          <p><b>Last incoming RF/Zigbee event</b></p>
           <ul>
             <li>Proto: ${this._lastProto}</li>
             <li>Code: ${this._lastCode}</li>
@@ -896,7 +905,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
 
         <!-- ================= VIEW MODE ================= -->
         ${!isEditing ? html`
-          <b>Last RF433 event</b>
+          <b>Last RF433/Zigbee event</b>
           <ul class="no_vert_margin" >
             <li>Proto: ${displayProto}</li>
             <li>Code: ${displayCode}</li>
@@ -913,14 +922,14 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
                   </li>
                   <li>Active: ${nonEditMatch.active ? "yes" : "no"}</li>
                   <li>Remote: ${nonEditMatch.remote}</li>
+                  <li>Type: ${nonEditMatch.type}</li>
                   <li>Button: ${nonEditMatch.button}</li>
                   <li>Channel: ${nonEditMatch.channel}</li>
-                  <li>Type: ${nonEditMatch.type}</li>
                 </ul>
               `
           : html`
                 <p><b>Unmapped code</b></p>
-                <p>This RF code is not assigned yet.</p>
+                <p>This code is not assigned yet.</p>
               `}
         ` : null}
       </div>
