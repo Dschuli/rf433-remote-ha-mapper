@@ -374,16 +374,28 @@ export class RF433Editor extends LitElement {
         return;
       }
     }
-    // If service changes, clear service_data
+    // If service changes, clear service_data or apply prefill
     if (field === 'service') {
-      this._working = { ...this._working, service: value, service_data: {} };
+      const entity = this._working?.entity || this.draft?.entity || '';
+      const prefill = this._getPrefillServiceData(entity, value);
+      let serviceData = {};
+
+      if (prefill) {
+        try {
+          serviceData = JSON.parse(prefill);
+        } catch (e) {
+          logger.error(`RF433Editor: Failed to parse prefill data for ${entity}|${value}`, e);
+        }
+      }
+
+      this._working = { ...this._working, service: value, service_data: serviceData };
       this.dispatchEvent(new CustomEvent("draft-changed", {
         detail: { field: 'service', value },
         bubbles: true,
         composed: true
       }));
       this.dispatchEvent(new CustomEvent("draft-changed", {
-        detail: { field: 'service_data', value: {} },
+        detail: { field: 'service_data', value: serviceData },
         bubbles: true,
         composed: true
       }));

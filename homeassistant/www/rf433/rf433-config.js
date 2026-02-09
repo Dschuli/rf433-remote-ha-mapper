@@ -32,7 +32,7 @@ export const ENTITY_DOMAIN_LIST = ["switch", "light", "cover", "script", "automa
 */
 export const CUSTOM_COMMON_SERVICE_DATA_KEYS = {
 	'*dimmer_control|script.turn_on': [
-		{ label: 'light_entity', value: 'entity_id', default: '' },
+		{ label: 'light_entity', value: 'light_entity', default: '' },
 		{ label: 'steps', value: 'steps', default: 5 },
 		{ label: 'bounce_at_top', value: 'bounce_at_top', default: false },
 		{ label: 'min_val', value: 'min_val', default: 0 },
@@ -48,7 +48,7 @@ export const CUSTOM_COMMON_SERVICE_DATA_KEYS = {
 *   }
 */
 export const PREFILL_SERVICE_DATA = {
-	'*.dimmer_control|script.turn_on': '{"light_entity":" ","steps":5,"bounce_at_top":false}'
+	'*dimmer_control|script.turn_on': '{"light_entity":" ","steps":5,"bounce_at_top":false}'
 };
 
 
