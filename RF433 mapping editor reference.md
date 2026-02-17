@@ -77,7 +77,7 @@ Before using the RF433 Learning Card, ensure you have completed the initial setu
 > 2. In the **Event to fire** field, enter: `esphome.rf433`
 > 3. In the **Event data** field, enter (as valid JSON):
 >    ```json
->    {"proto": 1, "code": 111111111}
+>    {"protocol": 1, "code": "111111111"}
 >    ```
 > 4. Click **Fire Event**.
 > This will trigger the learning card/editor as if a real RF code was received, allowing you to test mappings and UI behavior without hardware.

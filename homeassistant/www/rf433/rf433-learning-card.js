@@ -195,7 +195,7 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
     if (storeState !== this._prevStoreState) {
       logger.info("RF433LearningCard: Detected change in RF event store");
       this._prevStoreState = storeState;
-      if (!storeState) {
+      if (!storeState || storeState === "unknown" || storeState === "unavailable") {
         this._resetLastEventData();
       } else {
         try {

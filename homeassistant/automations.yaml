@@ -105,7 +105,7 @@
     event_type: "{{ trigger.event.event_type }}"
     proto: >
       {% if trigger.event.event_type == 'esphome.rf433' %}
-        {{ trigger.event.data.protocol | int }}
+        {{ trigger.event.data.protocol | default(trigger.event.data.proto, true) }}
       {% elif trigger.event.event_type == 'zha_event' %}
         Z1
       {% else %}
