@@ -111,8 +111,35 @@ export class RF433Editor extends LitElement {
       .highlight {
         color: var(--primary-color);
       }
+      .rf-fallback-switch {
+        width: 40px;
+        height: 20px;
+        accent-color: var(--primary-color);
+      }
     `
   ];
+
+  _renderSwitch(checked, disabled, onChange) {
+    if (customElements.get("ha-switch")) {
+      return html`
+        <ha-switch
+          .checked=${checked}
+          ?disabled=${disabled}
+          @change=${onChange}>
+        </ha-switch>
+      `;
+    }
+
+    return html`
+      <input
+        class="rf-fallback-switch"
+        type="checkbox"
+        .checked=${checked}
+        ?disabled=${disabled}
+        @change=${onChange}
+      />
+    `;
+  }
 
   // ========================================
   // Lifecycle Methods
@@ -538,11 +565,11 @@ export class RF433Editor extends LitElement {
             ></ha-selector>
 
             <ha-formfield label="Active">
-              <ha-switch
-                .checked=${this._working?.active ?? true}
-                ?disabled=${this.disabled}
-                @change=${e => this._change("active", e.target.checked)}>
-              </ha-switch>
+              ${this._renderSwitch(
+                this._working?.active ?? true,
+                this.disabled,
+                e => this._change("active", e.target.checked)
+              )}
             </ha-formfield>
           </div>
           <div class="row-1-2-1">

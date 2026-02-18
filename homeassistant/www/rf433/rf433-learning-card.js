@@ -785,6 +785,28 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
    * Render
    * ========================================================= */
 
+  _renderSwitch(checked, disabled, onChange) {
+    if (customElements.get("ha-switch")) {
+      return html`
+        <ha-switch
+          .checked=${checked}
+          ?disabled=${disabled}
+          @change=${onChange}>
+        </ha-switch>
+      `;
+    }
+
+    return html`
+      <input
+        class="rf-fallback-switch"
+        type="checkbox"
+        .checked=${checked}
+        ?disabled=${disabled}
+        @change=${onChange}
+      />
+    `;
+  }
+
   render() {
     const mapSensor = this.hass.states[this._runtime_mapping_sensor];
 
@@ -819,11 +841,11 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
         <!-- Learning toggle -->
         <div class="row row-4">
           <div class="flex_align">
-            <ha-switch
-              .checked=${this._learningMode}
-              @change=${this.toggleLearningMode}
-              ?disabled=${isEditing}>
-            </ha-switch>
+            ${this._renderSwitch(
+              this._learningMode,
+              isEditing,
+              this.toggleLearningMode
+            )}
             <span style="margin-left: 8px;">
               ${this._learningMode ? "Learning mode ON" : "Learning mode OFF"}
             </span>
@@ -958,6 +980,11 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
       li > pre {
         margin: 0;
       }
+    }
+    .rf-fallback-switch {
+      width: 40px;
+      height: 20px;
+      accent-color: var(--primary-color);
     }`
   ]
 }
