@@ -103,6 +103,7 @@ In Home Assistant:
    ```yaml
    type: custom:rf433-learning-card
    ```
+Set the dashboard view to **Panel** (single card view). The RF433 Learning Card is designed to be used as a panel view.
 
 > **Tip:** You can test the RF433 Learning Card and editor UI without hardware. See the [Editor Reference](RF433%20mapping%20editor%20reference.md#how-to-use) for a step-by-step guide to simulating RF events.
 

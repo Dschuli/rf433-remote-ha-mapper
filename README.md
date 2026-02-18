@@ -129,6 +129,7 @@ Add the RF433 Learning Card to your dashboard:
 ```yaml
 type: custom:rf433-learning-card
 ```
+Set the dashboard view to **Panel** (single card view). The RF433 Learning Card is designed to be used as a panel view.
 
 You'll need to add it as a resource first:
 1. Go to Settings → Dashboards → Resources
