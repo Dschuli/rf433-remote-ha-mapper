@@ -24,16 +24,27 @@
     - event_type: zha_event
       trigger: event
   actions:
+    - target:
+        entity_id: input_text.rf433_last_event_store
+      data:
+        value: >
+          {{ {
+            "proto": proto | string,
+            "code":  code | string,
+            "pressed": pressed | string,
+            "ts":    now().isoformat()
+          } | tojson }}
+      action: input_text.set_value
     - choose:
         - conditions:
             - condition: template
-              value_template: "{{ rf_map is none or rf_map | count == 0 }}"
+              value_template: "{{ rf_sensor_missing }}"
           sequence:
             - data:
                 level: error
                 logger: rf433
                 message: |
-                  RF map sensor missing or empty! sensor=sensor.rf433_runtime_map
+                  RF map sensor missing! sensor=sensor.rf433_runtime_map
               action: system_log.write
         - conditions:
             - condition: template
@@ -46,17 +57,6 @@
                     | selectattr('code', 'equalto', code | string)
                     | list %}
                   {{ match[0] if match | length > 0 else none }}
-            - target:
-                entity_id: input_text.rf433_last_event_store
-              data:
-                value: >
-                  {{ {
-                    "proto": proto | string,
-                    "code":  code | string,
-                    "pressed": pressed | string,
-                    "ts":    now().isoformat()
-                  } | tojson }}
-              action: input_text.set_value
             - choose:
                 - conditions:
                     - condition: state
@@ -146,4 +146,8 @@
       {% else %}
         unknown
       {% endif %}
-    rf_map: "{{ state_attr('sensor.rf433_runtime_map', 'map') }}"
+    rf_map_raw: "{{ state_attr('sensor.rf433_runtime_map', 'map') }}"
+    rf_map: "{{ rf_map_raw if rf_map_raw is not none else [] }}"
+    rf_sensor_state: "{{ states('sensor.rf433_runtime_map') }}"
+    rf_sensor_missing: >
+      {{ rf_sensor_state in ['unknown', 'unavailable', 'none', ''] }}
