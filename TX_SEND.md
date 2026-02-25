@@ -1,38 +1,36 @@
-# tx_send
+# TX-SEND
 
-`tx_send` is an experimental helper for transmitting RF433 codes from Home Assistant through this project’s RF433 mapping stack. It provides a small, direct way to send a raw or mapped RF command without modifying your existing automations.
+`tx_send` is an **experimental** helper for sending RF433 commands by name from Home Assistant.
 
-> **Experimental:** `tx_send` is under active development and its behavior, schema, and supported options may change.
+## What it does
+- Links a learned RF proto/code to a command name (e.g., `fan_turn_on`).
+- Lets any HA automation or script call `send_rf_command` with that name.
 
-## What it is
-- An option to link an existing RF proto/code combination (discovered viia the RF433 learning card) to a chosen command name (eg. fan_turn_on). By later calling the script ´send_rf_command´ with that name a matching stx routine will get called.
-- Script can be called by any HA option (automation, script, button .....).
-- Useful for sending RF commands by name.
+## Setup (short)
+1. Create `dummy_send_rf` and `send_rf_command` from the YAML files in rf433.
+2. Add the two config entries in rf433-config.js:
 
-Note: Currently no real tx sending routine is provided for the ESP RF433 sniffer. The experimental branch contains just a `dummy_send_rf` script that creates log entries for testing the workflow.
+```js
+// CUSTOM_COMMON_SERVICE_DATA_KEYS
+'script.send_rf_command|*': [
+	{ label: 'command_name', value: 'command_name', default: '' },
+	{ label: 'repetitions', value: 'repetitions', default: 3 },
+	{ label: 'script', value: 'script', default: '' },
+],
 
-## How to use
-### Install
-1. Create the scripts `dummy_send_rf` and `send_rf_command` off the provided yaml files under `rf433`
-2. To ease using this feature, the contained `rf433-config.js` contains two additions. If your config is unchanged, use the provided one. Else either merge into your version or manually add these statements:
-- under `export const CUSTOM_COMMON_SERVICE_DATA_KEYS` add
-> 	'script.send_rf_command|*': [
->  		{ label: 'command_name', value: 'command_name', default: '' },
->  		{ label: 'repetitions', value: 'repetitions', default: 3 },
->  		{ label: 'script', value: 'script', default: '' },
->  	],
-- under `export const PREFILL_SERVICE_DATA` add
-	`'script.send_rf_command|*': '{"command_name":"","repetitions":3}',`
-###Learning/Definition
-1. In learning mode, send the RF code you want to connect to a name
-2. Choose entity `script.send_rf_command` (any `Service`) with at least the chosen command name under `Service Data`
-3. Set `Active` to false (else any later remote button press will also activate the sending script)
-4. Save the entry.
-### Sending RF command by name
-1. Call/call script `send_rf_command` with the chosen `command_name`
-2. Check the HA log for the test entries (warnings) or any errors
-### Activate the actual sending of RF commands
-1. Replace the `dummy_send_rf` entry in the automation with your actual script that executes the command (parameters provided are `proto`, `code`, `repetitions`)
-Line: 
-      `default_script_name: "script.dummy_send_rf"`
+// PREFILL_SERVICE_DATA
+'script.send_rf_command|*': '{"command_name":"","repetitions":3}',
+```
+
+## Learn + send
+1. Learn the RF code and save it with a `command_name` (under `Service Data`) using `script.send_rf_command` as entity. Any service wil do.
+2. Set `Active` to false to avoid echo-triggering sends.
+3. Call `send_rf_command` with the saved `command_name`.
+
+## Limitation
+Right now the provided sender is `dummy_send_rf`, which only logs. Replace it with your real TX script when ready:
+
+```yaml
+default_script_name: "script.dummy_send_rf"
+```
 
