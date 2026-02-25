@@ -1,0 +1,86 @@
+alias: send_rf_command
+description: Send RF commands by name (proto/code) using rf433 map
+fields:
+  command_name:
+    description: RF command name to lookup in rf_map
+    example: lamp_on
+  repetitions:
+    description: Repetitions override (1-20)
+    example: 3
+    selector:
+      number:
+        min: 1
+        max: 20
+        mode: slider
+sequence:
+  - variables:
+      rep_default: 3
+      default_script_name: "script.dummy_send_rf"
+      rf_map_raw: "{{ state_attr('sensor.rf433_runtime_map', 'map') }}"
+      rf_map: "{{ rf_map_raw if rf_map_raw is not none else [] }}"
+      rf_sensor_state: "{{ states('sensor.rf433_runtime_map') }}"
+      rf_sensor_missing: "{{ rf_sensor_state in ['unknown', 'unavailable', 'none', ''] }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ (rf_sensor_missing | default(false)) or (rf_map | count == 0) }}"
+        sequence:
+          - action: system_log.write
+            data:
+              level: error
+              logger: send_rf_command
+              message: "RF map missing or empty; aborting send_rf_command."
+          - stop: "rf_map missing"
+  - variables:
+      entry: >-
+        {% set match = rf_map
+          | selectattr('entity', 'equalto', 'script.send_rf_command')
+          | selectattr('service_data.command_name', 'equalto', command_name | string)
+          | list %}
+        {{ match[0] if match | length > 0 else none }}
+      proto: "{{ entry.proto if entry is not none else '' }}"
+      code: "{{ entry.code if entry is not none else '' }}"
+      send_rf_script: >-
+        {% if entry is not none and entry.service_data is not none %}
+          {% set s = entry.service_data.get('script', '') %}
+          {% if s | trim | length > 0 %}
+            {{ s }}
+          {% else %}
+            {{ default_script_name }}
+          {% endif %}
+        {% else %}
+          {{ default_script_name }}
+        {% endif %}
+      rep_from_entry: >-
+        {% if entry is not none and entry.service_data is not none %}
+          {{ entry.service_data.get('repetitions', 0) | int }}
+        {% else %}
+          0
+        {% endif %}
+      rep_param: "{{ repetitions | default(0) | int }}"
+      rep_effective: >-
+        {% if 1 <= rep_param <= 20 %}
+          {{ rep_param }}
+        {% elif 1 <= rep_from_entry <= 20 %}
+          {{ rep_from_entry }}
+        {% else %}
+          {{ rep_default }}
+        {% endif %}
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ entry is none or proto | string | length == 0 or code | string | length == 0 or send_rf_script | string | length == 0 }}"
+        sequence:
+          - action: system_log.write
+            data:
+              level: warning
+              logger: send_rf_command
+              message: "No matching RF command or missing proto/code/script for command_name={{ command_name }}."
+    default:
+      - action: "{{ send_rf_script }}"
+        data:
+          proto: "{{ proto }}"
+          code: "{{ code }}"
+          repetitions: "{{ rep_effective }}"
+mode: queued
+max: 10

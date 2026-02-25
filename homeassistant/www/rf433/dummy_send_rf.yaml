@@ -1,0 +1,22 @@
+alias: Dummy Send RF
+mode: queued
+fields:
+  proto:
+    description: RF protocol
+    example: "1"
+  code:
+    description: RF code
+    example: "123456"
+  repetitions:
+    description: Number of repetitions
+    example: 3
+sequence:
+  - repeat:
+      count: "{{ repetitions | default(1) | int }}"
+      sequence:
+        - data:
+            level: warning
+            message: |
+              Sent RF command: {{ proto }} {{ code }}
+          action: system_log.write
+description: "Placeholder script for sending RF commands. This script does not actually send RF signals but can be used for testing and debugging."

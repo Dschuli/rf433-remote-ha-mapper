@@ -38,6 +38,11 @@ export const CUSTOM_COMMON_SERVICE_DATA_KEYS = {
 		{ label: 'min_val', value: 'min_val', default: 0 },
 		{ label: 'max_val', value: 'max_val', default: 100 },
 	],
+	'script.send_rf_command|*': [
+		{ label: 'command_name', value: 'command_name', default: '' },
+		{ label: 'repetitions', value: 'repetitions', default: 3 },
+		{ label: 'script', value: 'script', default: '' },
+	],
 };
 
 /* Prefill service data for specific entity/service combinations allowing wildcard '*'
@@ -48,10 +53,9 @@ export const CUSTOM_COMMON_SERVICE_DATA_KEYS = {
 *   }
 */
 export const PREFILL_SERVICE_DATA = {
-	'*dimmer_control|script.turn_on': '{"light_entity":" ","steps":5,"bounce_at_top":false}'
+	'script.dimmer_control|script.turn_on': '{"light_entity":" ","steps":5,"bounce_at_top":false}',
+	'script.send_rf_command|*': '{"command_name":"","repetitions":3}',
 };
-
-
 
 // Default configuration values
 
