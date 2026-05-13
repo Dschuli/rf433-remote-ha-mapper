@@ -187,6 +187,10 @@ globals:
   - id: last_raw_pulses
     type: int
     restore_value: no
+  - id: last_good_rcswitch_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
 
 # RF receiver configuration using RMT (ESP32 hardware peripheral)
 remote_receiver:
@@ -200,15 +204,14 @@ remote_receiver:
   buffer_size: ${rf_buffer_size}
 
   # Handle received RF signals
-  on_raw:
-    then:
-      - lambda: |-
-          rf_handle_raw(x, int(${rf_debounce_ms}), ${enable_raw_logging});
-
+  # rc_switch has priority: when it decodes a valid/debounced frame, it sends
+  # the Home Assistant event immediately. Raw handling waits briefly so it can
+  # suppress duplicate custom-decoder events for the same RF burst.
   on_rc_switch:
     then:
       - lambda: |-
-           rf_handle_rcswitch(x, int(${rf_debounce_ms}));
+          rf_handle_rcswitch(x, int(${rf_debounce_ms}));
+
       - if:
           condition:
             lambda: "return id(debounced);"
@@ -218,5 +221,26 @@ remote_receiver:
                 data:
                   protocol: !lambda "return id(last_proto);"
                   code: !lambda "return to_string(id(last_code));"
-            
+
             - script.execute: status_flash
+
+  on_raw:
+    then:
+      # Experimental raw decoder fallback. rc_switch still has priority inside
+      # rf_handle_raw(): if rc_switch accepted the burst very recently, raw only
+      # logs/skips and does not emit a duplicate event.
+      - lambda: |-
+          rf_handle_raw(x, int(${rf_debounce_ms}), ${enable_raw_logging});
+
+      - if:
+          condition:
+            lambda: "return id(debounced);"
+          then:
+            - homeassistant.event:
+                event: "esphome.rf433"
+                data:
+                  protocol: !lambda "return id(last_proto);"
+                  code: !lambda "return to_string(id(last_code));"
+
+            - script.execute: status_flash
+
