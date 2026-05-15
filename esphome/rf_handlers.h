@@ -142,6 +142,11 @@ inline RFDecodedRawFrame rf_decode_custom_raw_(auto &pulses) {
 
 // Store raw information
 inline void rf_handle_raw(auto &pulses, int debounce_ms, bool enable_raw_logging) {
+  // Always clear per-callback decision first. Otherwise a previous successful
+  // decode can leave id(debounced)=true and make later invalid/noisy raw
+  // callbacks emit stale duplicate events from YAML conditions.
+  id(debounced) = false;
+
   id(last_raw_pulses) = pulses.size();
   id(last_raw_bits)   = pulses.size() / 2;
 
@@ -159,6 +164,13 @@ inline void rf_handle_raw(auto &pulses, int debounce_ms, bool enable_raw_logging
   static uint32_t last_raw_decoded_code = 0;
 
   uint32_t now = millis();
+
+  // rc_switch has priority for the same RF burst. If rc_switch accepted a
+  // frame very recently, suppress raw fallback output to avoid duplicates.
+  if (now - id(last_good_rcswitch_ms) < (uint32_t) debounce_ms) {
+    return;
+  }
+
   if (decoded.code == last_raw_decoded_code &&
       now - last_raw_decoded_time < (uint32_t) debounce_ms) {
     return;
@@ -225,6 +237,7 @@ inline void rf_handle_rcswitch(esphome::remote_base::RCSwitchData &x, int deboun
     last_time = now;
     last_code_local = x.code;
     last_proto_local = x.protocol;
+    id(last_good_rcswitch_ms) = now;
 
     id(last_proto) = x.protocol;
     id(last_code) = x.code;
