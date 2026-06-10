@@ -476,10 +476,11 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
   _start_EditMode(proto, code, pressed) {
     logger.info("RF433LearningCard: starting editor for ", proto, code);
     this._lockedPcc = { proto: proto, code: code };
-    this._editorStartedAt = Date.now();
     const stateObj = this.hass.states[this._runtime_mapping_sensor];
     logger.debug("RF433LearningCard: map stateObj =", stateObj);
     if (!stateObj) return;
+    // Capture the mapping's timestamp when entering edit mode, not the current time
+    this._editorStartedAt = new Date(stateObj.last_updated).getTime();
     const map = Array.isArray(stateObj.attributes?.map) ? stateObj.attributes.map : [];
     const existing = this.findMapping(map, proto, code);
 
@@ -842,10 +843,10 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
         <div class="row row-4">
           <div class="flex_align">
             ${this._renderSwitch(
-              this._learningMode,
-              isEditing,
-              this.toggleLearningMode
-            )}
+      this._learningMode,
+      isEditing,
+      this.toggleLearningMode
+    )}
             <span style="margin-left: 8px;">
               ${this._learningMode ? "Learning mode ON" : "Learning mode OFF"}
             </span>
@@ -865,14 +866,14 @@ class RF433LearningCard extends BusyOverlayMixin(LitElement) {
               title=${blocked ? "Terminate event blocking" : "Temporarily block RF433/Zigbee automation from acting on incoming events"}>
               ${blocked ? `Unblock - ${this._blockCounter} sec` : "Block events"}
             </ha-button>
-            <ha-textfield
+            <ha-input
               label="seconds"
               type="number"
               min="1"
               style="width: 100px;"
               .value=${String(this._blockSeconds)}
               @input=${(e) => { this._blockSeconds = Number(e.target.value); }}
-            ></ha-textfield>
+            ></ha-input>
           </div>
           <div class="flex_align" style="background: var(--secondary-background-color); padding: 8px; border-radius: var(--rf-border-radius);">
             <ha-button
