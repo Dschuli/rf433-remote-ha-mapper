@@ -13,14 +13,12 @@ Get up and running with 433MHz RF control in Home Assistant in just a few steps!
 ## 5-Minute Setup
 ### 1. Flash the ESP32 (5 minutes)
 
-**Note:** The RF handler logic is now split into two files: `rf_handlers.h` (header) and `rf-handler.c` (implementation). Make sure to copy both files if you are customizing or extending RF handling logic.
-
 **Option A: Using ESPHome Add-on (simplest)**:
 ```bash
 # In ESPHome dashboard
 1. Copy esphome/433mhz-sniffer.yaml to your ESPHome folder
 2. Copy esphome/hardware-config.yaml to your ESPHome folder
-3. Copy esphome/rf_handlers.h and esphome/rf-handler.c to your ESPHome folder (if customizing RF logic)
+3. Copy esphome/rf_handlers.h to your ESPHome folder
 4. Edit esphome/secrets.yaml with your WiFi credentials
 5. Click "Install" and choose "Plug into this computer"
 6. Wait for compilation and upload

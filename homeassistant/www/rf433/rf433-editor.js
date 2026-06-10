@@ -348,13 +348,33 @@ export class RF433Editor extends LitElement {
   }
 
   _clearServiceDataValidation() {
-    const serviceDataField = this.shadowRoot?.querySelector('ha-textfield[label="Service data (JSON, optional)"]');
+    const serviceDataField = this.shadowRoot?.querySelector('ha-input[label="Service data (JSON, optional)"]');
     if (serviceDataField) {
-      serviceDataField.invalid = false;
-      serviceDataField.validationMessage = "";
-      serviceDataField.helperPersistent = false;
+      if ('invalid' in serviceDataField) serviceDataField.invalid = false;
+      if ('validationMessage' in serviceDataField) serviceDataField.validationMessage = "";
+      if ('helperPersistent' in serviceDataField) serviceDataField.helperPersistent = false;
+
+      const nativeInput = serviceDataField.inputElement
+        || serviceDataField._inputElement
+        || serviceDataField.renderRoot?.querySelector('textarea, input');
+      nativeInput?.setCustomValidity?.("");
+      nativeInput?.reportValidity?.();
       serviceDataField.reportValidity?.();
     }
+  }
+
+  _setServiceDataValidation(field, invalid, message = "") {
+    if (!field) return;
+    if ('invalid' in field) field.invalid = invalid;
+    if ('validationMessage' in field) field.validationMessage = message;
+    if ('helperPersistent' in field) field.helperPersistent = invalid;
+
+    const nativeInput = field.inputElement
+      || field._inputElement
+      || field.renderRoot?.querySelector('textarea, input');
+    nativeInput?.setCustomValidity?.(message);
+    field.reportValidity?.();
+    nativeInput?.reportValidity?.();
   }
 
   // ========================================
@@ -593,47 +613,36 @@ export class RF433Editor extends LitElement {
               ?disabled=${this.disabled}
               @value-changed=${e => this._change("service", e.detail.value)}
             ></ha-selector>
-            <ha-textfield
+            <ha-input
               label="Service data (JSON, optional)"
               .value=${(() => {
         try {
-          return JSON.stringify(this._working?.service_data ?? {}, null, 2);
+          return JSON.stringify(this._working?.service_data ?? {});
         } catch (e) {
           logger.error("RF433Editor: Failed to stringify service_data", e);
           return '{}';
         }
       })()}
               ?disabled=${this.disabled}
-              .multiline=${true}
-              .rows=${3}
               @input=${e => {
         const val = e.target.value;
         // Wenn Feld komplett leer ist oder nur aus zwei Anführungszeichen besteht, service_data auf {} setzen, aber das Textfeld leer lassen
         if (val.trim() === "" || val.trim() === "\"\"") {
           this._change("service_data", {});
           e.target.value = "";
-          e.target.invalid = false;
-          e.target.validationMessage = "";
-          e.target.helperPersistent = true;
-          e.target.reportValidity?.();
+          this._setServiceDataValidation(e.target, false, "");
           return;
         }
         try {
           const parsed = JSON.parse(val);
           this._change("service_data", parsed);
-          e.target.invalid = false;
-          e.target.validationMessage = "";
-          e.target.helperPersistent = true;
-          e.target.reportValidity?.();
+          this._setServiceDataValidation(e.target, false, "");
         } catch {
-          e.target.invalid = true;
-          e.target.validationMessage = "Invalid JSON";
-          e.target.helperPersistent = true;
-          e.target.reportValidity?.();
+          this._setServiceDataValidation(e.target, true, "Invalid JSON");
         }
       }}
             >
-            </ha-textfield>
+            </ha-input>
             ${this._getCommonServiceDataKeys().length > 1 && this._showCommonParamSelector ? html`
               <div style="display: flex; flex-direction: column; width: 100%;">
                 <ha-selector
@@ -686,8 +695,8 @@ export class RF433Editor extends LitElement {
             const selected = e.detail.value;
             if (selected) {
               // Insert selected entity_id at cursor position in the service data text field
-              const textField = this.shadowRoot?.querySelector('ha-textfield[label="Service data (JSON, optional)"]');
-              // Try to get the native input/textarea inside ha-textfield
+              const textField = this.shadowRoot?.querySelector('ha-input[label="Service data (JSON, optional)"]');
+              // Try to get the native input/textarea inside ha-input
               const nativeInput = textField && (textField.inputElement || textField._inputElement || textField.renderRoot?.querySelector('textarea, input'));
               if (nativeInput) {
                 const start = nativeInput.selectionStart || 0;
