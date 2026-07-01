@@ -2,7 +2,7 @@
 
 ## Project Status
 
-This project/repository has been split into two separate projects:
+This repository has been split into two separate projects. Both are active and will continue to be maintained and improved on a best-effort basis.
 
 - **[ha-event2action](https://github.com/Dschuli/ha-event2action)** - Home Assistant event-to-action mapper and learning UI.
 - **[rf433-esphome-sniffer](https://github.com/Dschuli/rf433-esphome-sniffer)** - ESPHome-based RF433 sniffer/receiver configuration.
