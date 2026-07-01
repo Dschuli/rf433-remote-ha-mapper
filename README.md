@@ -1,5 +1,16 @@
 # 433MHz Remote Control Mapper for Home Assistant
 
+## Project Status
+
+This project/repository has been split into two separate projects:
+
+- **[ha-event2action](https://github.com/Dschuli/ha-event2action)** - Home Assistant event-to-action mapper and learning UI.
+- **[rf433-esphome-sniffer](https://github.com/Dschuli/rf433-esphome-sniffer)** - ESPHome-based RF433 sniffer/receiver configuration.
+
+The `main` branch of this repository will be deprecated. The other branches, `automate-tx` and `feature/casa_fan`, will be checked for value, interest, and applicability and may be transferred as well.
+
+## Overview
+
 A comprehensive solution for integrating 433MHz RF remote controls with Home Assistant. This project combines an ESPHome-based RF sniffer with a powerful learning interface in Home Assistant, allowing you to easily map RF signals to Home Assistant actions.
 
 ## Documentation
@@ -17,6 +28,7 @@ A comprehensive solution for integrating 433MHz RF remote controls with Home Ass
 - **Oldschool** household members with reluctance to use home automation features, apps or voice control can keep using the 433MHz remotes
 - **Use existing 433 MHz remotes** as generic actuators for all potential HomeAssistant actions
 - **No cloud dependency** - works locally even without internet
+- **One automation** to act on all incoming events with appropriate feeders
 - **One button, multiple actions** - trigger scenes/automations with a single press
 - **Cost-effective** - repurpose old remotes instead of buying new smart ones
 
