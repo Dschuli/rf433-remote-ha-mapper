@@ -279,6 +279,7 @@ This project is open source and available under the MIT License.
 - ESPHome community for the excellent ESP32 platform
 - Home Assistant community for inspiration and support
 - All contributors and users of this project
+- AI-assisted tools were used to support the coding, documentation, and review process. All resulting changes were reviewed and tested by the project maintainer.
 
 ## Support
 
