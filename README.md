@@ -9,6 +9,9 @@ This repository has been split into two separate projects. Both are active and w
 
 The `main` branch of this repository will be deprecated. The other branches, `automate-tx` and `feature/casa_fan`, will be checked for value, interest, and applicability and may be transferred as well.
 
+As per 31-08-2026 changes were made to the the two maintained projects above. They are non-breaking, but looking fwd its a good idea to switch to the new versions. If you already mapped some zha events, you will have to re-map those codes.
+Contact me in case you have a large number of such zha mappings. I can help with migration.
+
 ## Overview
 
 A comprehensive solution for integrating 433MHz RF remote controls with Home Assistant. This project combines an ESPHome-based RF sniffer with a powerful learning interface in Home Assistant, allowing you to easily map RF signals to Home Assistant actions.
