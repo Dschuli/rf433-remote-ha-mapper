@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## Significant project status change
+
+This repository has been split into two separate projects. Both are active and will continue to be maintained and improved on a best-effort basis.
+
+- **[ha-event2action](https://github.com/Dschuli/ha-event2action)** - Home Assistant event-to-action mapper and learning UI (simplified install: custom HACS card + HA package).
+- **[rf433-esphome-sniffer](https://github.com/Dschuli/rf433-esphome-sniffer)** - ESPHome-based RF433 sniffer/receiver configuration.
+
+The `main` branch of this repository will be deprecated. The other branches, `automate-tx` and `feature/casa_fan`, will be checked for value, interest, and applicability and may be transferred as well.
+
+As per 31-08-2026 changes were made to the the two maintained projects above. They are non-breaking, but looking fwd its a good idea to switch to the new versions. If you already mapped some zha events, you will have to re-map those codes.
+Contact me in case you have a large number of such zha mappings. I can help with migration.
+
+
 ## [Unreleased]
 
 ### Added
